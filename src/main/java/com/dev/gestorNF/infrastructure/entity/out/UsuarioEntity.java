@@ -19,9 +19,9 @@ public class UsuarioEntity {
     private Long id;
     @Column(name= "nome", length = 100)
     private String nome;
-    @Column(name = "nome",length = 100)
+    @Column(name = "email",length = 100)
     private String email;
-    @Column(name = "nome", length = 20)
+    @Column(name = "senha", length = 20)
     private String senha;
 
     @OneToMany(mappedBy = "usuario")

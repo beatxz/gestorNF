@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Entity
 @Table(name = "nota_fiscal")
 public class NotaFiscalEntity {
 
@@ -18,8 +19,8 @@ public class NotaFiscalEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 
     private Long id;
-    @Column(name= "vendedor",length = 100)
-    private String nome;
+    @Column(name= "nomeVendedor",length = 100)
+    private String nomeVendedor;
     @Column(name= "numeroNotaFiscal",length = 100)
     private int numeroNotaFiscal;
     @Column(name= "nomeEmpresa",length = 100)
@@ -33,8 +34,5 @@ public class NotaFiscalEntity {
     @ManyToOne
     @JoinColumn(name = "vendedor_id")
     private VendedorEntity vendedor;
-
-
-
 
 }

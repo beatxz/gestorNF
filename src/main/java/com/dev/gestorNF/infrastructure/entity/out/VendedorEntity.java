@@ -10,6 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Entity
 @Table(name ="vendedor")
 public class VendedorEntity {
 
@@ -26,7 +27,7 @@ public class VendedorEntity {
     private UsuarioEntity usuario;
 
     @OneToMany(
-            mappedBy = "funcionario",
+            mappedBy = "vendedor",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
