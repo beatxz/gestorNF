@@ -14,7 +14,6 @@ public class NotaFiscalConverter {
 
     public NotaFiscalEntity paraNotaFiscalEntity(NotaFiscalDTORequest notaFiscalDTORequest){
         return NotaFiscalEntity.builder()
-                .vendedor(notaFiscalDTORequest.getVendedorId())
                 .numeroNotaFiscal(notaFiscalDTORequest.getNumeroNotaFiscal())
                 .nomeEmpresa(notaFiscalDTORequest.getNomeEmpresa())
                 .valorNotaFiscal(notaFiscalDTORequest.getValorNotaFiscal())
