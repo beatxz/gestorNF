@@ -12,7 +12,7 @@ import java.time.LocalDate;
 
 public class NotaFiscalDTORequest {
 
-    private String nomeVendedor;
+    private Long vendedorId;
     private int numeroNotaFiscal;
     private String nomeEmpresa;
     private double valorNotaFiscal;

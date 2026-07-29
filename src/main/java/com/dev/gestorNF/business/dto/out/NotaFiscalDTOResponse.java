@@ -13,7 +13,7 @@ import java.time.LocalDate;
 public class NotaFiscalDTOResponse {
 
     private Long id;
-    private String nomeVendedor;
+    private VendedorDTOResponse vendedor;
     private int numeroNotaFiscal;
     private String nomeEmpresa;
     private double valorNotaFiscal;
