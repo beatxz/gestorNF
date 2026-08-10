@@ -18,8 +18,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.net.PasswordAuthentication;
-
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
@@ -27,7 +25,6 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final JwtUtil jwtUtil;
     private final UsuarioConverter usuarioConverter;
-    private final PasswordAuthentication passwordAuthentication;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
 
@@ -67,6 +64,14 @@ public class UsuarioService {
     public void deletaUsuarioPorEmail(String email){
         usuarioRepository.deleteByEmail(email);
     }
-
+    public UsuarioDTOResponse buscaUsuarioEmail(String email) {
+        try {
+           return usuarioConverter.paraUsuarioDTOResponse
+                    (usuarioRepository.findByEmail(email)
+                            .orElseThrow(() -> new RuntimeException("Usuario não encontrado")));
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Usuario não encontrado");
+        }
+    }
 
 }

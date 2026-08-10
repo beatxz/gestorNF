@@ -12,9 +12,8 @@ import java.util.List;
 @Component
 public class VendedorConverter {
 
-    public VendedorEntity paraVendedorEntity(VendedorDTORequest vendedorDTORequest, Long idVendedor) {
+    public VendedorEntity paraVendedorEntity(VendedorDTORequest vendedorDTORequest) {
         return VendedorEntity.builder()
-                .idVendedor(idVendedor)
                 .nome(vendedorDTORequest.getNome())
                 .comissao(vendedorDTORequest.getComissao())
                 .build();
@@ -34,5 +33,12 @@ public class VendedorConverter {
             listaDTO.add(paraVendedorDTOResponse(vendedorEntity1));
         }
         return listaDTO;
+    }
+    public List<VendedorEntity> paraListaVendedorEntity(List<VendedorDTORequest> vendedorDTORequest) {
+        List<VendedorEntity> listaEntity = new ArrayList<>();
+        for (  VendedorDTORequest vendedorRequest : vendedorDTORequest) {
+            listaEntity.add(paraVendedorEntity(vendedorRequest));
+        }
+        return listaEntity;
     }
 }

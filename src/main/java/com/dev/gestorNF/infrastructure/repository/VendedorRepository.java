@@ -10,4 +10,5 @@ import java.util.List;
 public interface VendedorRepository extends JpaRepository<VendedorEntity,Long> {
 
      List<VendedorEntity> findByEmailUsuario(String email);
+
 }
