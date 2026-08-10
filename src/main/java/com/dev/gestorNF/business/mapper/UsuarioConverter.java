@@ -5,6 +5,9 @@ import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
 import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class UsuarioConverter {
 
@@ -24,6 +27,11 @@ public class UsuarioConverter {
                 .senha(entity.getSenha())
                 .build();
     }
-
-
+    public List<UsuarioDTOResponse> paraListaUsuarioDTOResponse(List<UsuarioEntity>ListaUsuarioEntity) {
+        List<UsuarioDTOResponse> ListaDTO = new ArrayList<>();
+        for (UsuarioEntity usuarioEntity : ListaUsuarioEntity){
+            ListaDTO.add(paraUsuarioDTOResponse(usuarioEntity));
+    }
+        return ListaDTO;
+    }
 }

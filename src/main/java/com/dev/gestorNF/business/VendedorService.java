@@ -11,8 +11,6 @@ import com.dev.gestorNF.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class VendedorService {
@@ -27,7 +25,7 @@ public class VendedorService {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
         UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
-        VendedorEntity vendedorEntity = vendedorConverter.paraVendedorEntity(vendedorDTORequest, usuarioEntity.getId());
+        VendedorEntity vendedorEntity = vendedorConverter.paraVendedorEntity(vendedorDTORequest);
         return vendedorConverter.paraVendedorDTOResponse(vendedorRepository.save(vendedorEntity));
     }
 
@@ -42,10 +40,13 @@ public class VendedorService {
             throw new RuntimeException("Id não encontrado " + idVendedor);
         }
     }
-    public List<VendedorDTOResponse> buscarVendedoresPorEmail(String token){
+    public VendedorDTOResponse buscarVendedorPorId(String token,Long idVendedor){
         String email = jwtUtil.extrairEmailToken(token.substring(7));
-        List<VendedorEntity>listaVendedor = vendedorRepository.findByEmailUsuario(email);
-        return vendedorConverter.paraListaVendedorDTOResponse(listaVendedor);
+        usuarioRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
+
+        VendedorEntity vendedor = vendedorRepository.findById(idVendedor)
+                .orElseThrow(()->new RuntimeException("Vendedor não encontrado "+idVendedor));
+        return vendedorConverter.paraVendedorDTOResponse(vendedor);
 
     }
     public VendedorDTOResponse updateComissao(String token, Long idVendedor,Double comissao){
