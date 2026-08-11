@@ -19,8 +19,6 @@ public class NotaFiscalEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 
     private Long id;
-    @Column(name= "nomeVendedor",length = 100)
-    private String nomeVendedor;
     @Column(name= "numeroNotaFiscal",length = 100)
     private int numeroNotaFiscal;
     @Column(name= "nomeEmpresa",length = 100)
