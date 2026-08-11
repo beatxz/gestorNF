@@ -61,7 +61,7 @@ public class UsuarioService {
             throw new UnauthorizedException("Usuário ou senha invalidos ",e.getCause());
         }
     }
-    public void deletaUsuarioPorEmail(String email){
+    public void deletaUsuarioEmail(String email){
         usuarioRepository.deleteByEmail(email);
     }
     public UsuarioDTOResponse buscaUsuarioEmail(String email) {

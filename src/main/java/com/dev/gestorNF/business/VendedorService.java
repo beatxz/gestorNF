@@ -19,7 +19,6 @@ public class VendedorService {
     private final JwtUtil jwtUtil;
     private final UsuarioRepository usuarioRepository;
     private final VendedorRepository vendedorRepository;
-    private final VendedorEntity vendedorEntity;
 
     public VendedorDTOResponse cadastroVendedor(String token, VendedorDTORequest vendedorDTORequest) {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
