@@ -3,6 +3,7 @@ package com.dev.gestorNF.business.mapper;
 import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
 import com.dev.gestorNF.business.dto.out.NotaFiscalDTOResponse;
 import com.dev.gestorNF.infrastructure.entity.out.NotaFiscalEntity;
+import com.dev.gestorNF.infrastructure.entity.out.VendedorEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,12 +13,13 @@ public class NotaFiscalConverter {
 
     private final VendedorConverter vendedorConverter;
 
-    public NotaFiscalEntity paraNotaFiscalEntity(NotaFiscalDTORequest notaFiscalDTORequest){
+    public NotaFiscalEntity paraNotaFiscalEntity(NotaFiscalDTORequest notaFiscalDTORequest,VendedorEntity vendedorEntity){
         return NotaFiscalEntity.builder()
                 .numeroNotaFiscal(notaFiscalDTORequest.getNumeroNotaFiscal())
                 .nomeEmpresa(notaFiscalDTORequest.getNomeEmpresa())
                 .valorNotaFiscal(notaFiscalDTORequest.getValorNotaFiscal())
                 .dataVenda(notaFiscalDTORequest.getDataVenda())
+                .vendedor(vendedorEntity)
                 .build();
     }
     public NotaFiscalDTOResponse paraNotaFiscalDTOResponse (NotaFiscalEntity notaFiscalEntity){

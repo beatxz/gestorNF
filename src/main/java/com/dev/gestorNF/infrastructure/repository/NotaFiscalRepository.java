@@ -12,7 +12,7 @@ public interface NotaFiscalRepository extends JpaRepository<NotaFiscalEntity,Lon
 
     Boolean existsByNumeroNotaFiscal(int numeroNotaFiscal);
 
-    Optional<NotaFiscalEntity>findByNumeroNotaFiscal(int numeroNotaFiscal);
+    Optional<NotaFiscalEntity>findByNumeroNotaFiscal(int numeroNotaFiscal,Long idVendedor);
 
     @Transactional
     void deleteByNumeroNotaFiscal(int numeroNotaFiscal);
