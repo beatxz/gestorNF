@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.YearMonth;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/notaFiscal")
@@ -24,5 +26,17 @@ public class NotaFiscalController {
                                                                  @RequestParam("id") Long idVendedor,
                                                                  @RequestParam("notaFiscal") int numeroNotaFiscal){
         return ResponseEntity.ok(notaFiscalService.buscarNotaFiscal(token,idVendedor,numeroNotaFiscal));
+    }
+    @GetMapping("/valorMensal")
+    public ResponseEntity<Double>valorTotalMensal(@RequestHeader("Authorization") String token,
+                                                  @RequestParam("id") Long idVendedor,
+                                                  @RequestParam ("mes")YearMonth yearMonth){
+       return ResponseEntity.ok(notaFiscalService.valorTotalMensal(token,idVendedor,yearMonth));
+    }
+    @GetMapping("/valorComissao")
+    public ResponseEntity<Double>valorTotalComissao(@RequestHeader("Authorization") String token,
+                                                    @RequestParam("id") Long idVendedor,
+                                                    @RequestParam("mes") YearMonth yearMonth){
+        return ResponseEntity.ok(notaFiscalService.valorTotalComissao(token,idVendedor,yearMonth));
     }
 }
