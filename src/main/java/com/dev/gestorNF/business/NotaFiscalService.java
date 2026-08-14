@@ -90,7 +90,7 @@ public class NotaFiscalService {
                 .orElseThrow(() -> new RuntimeException("Email não encontrado " + token));
         VendedorEntity vendedorEntity = vendedorRepository.findById(idVendedor)
                 .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
-        Double total = valorTotalMensal(token, idVendedor, yearMonth) * vendedorEntity.getComissao();
+        Double total = valorTotalMensal(token, idVendedor, yearMonth) * (vendedorEntity.getComissao()/100);
 
         return total;
     }
