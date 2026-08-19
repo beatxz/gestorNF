@@ -1,0 +1,321 @@
+import { useState, useEffect, useCallback, useRef } from "react"
+import { Settings, LogOut, UserRound, BadgePercent, Hash } from "lucide-react"
+import VendedorSidebar from "../components/VendedorSidebar.jsx"
+import FinanceCards from "../components/FinanceCards.jsx"
+import MonthPicker from "../components/MonthPicker.jsx"
+import NotasTable from "../components/NotasTable.jsx"
+import Button from "../components/ui/Button.jsx"
+import { EmptyState } from "../components/ui/Feedback.jsx"
+import AddVendedorModal from "../components/modals/AddVendedorModal.jsx"
+import AddNotaModal from "../components/modals/AddNotaModal.jsx"
+import NotaDetalheModal from "../components/modals/NotaDetalheModal.jsx"
+import SettingsModal from "../components/modals/SettingsModal.jsx"
+import { useVendedores } from "../hooks/useVendedores.js"
+import { useAuth } from "../hooks/useAuth.jsx"
+import { useToast } from "../hooks/useToast.jsx"
+import { buscarVendedorPorId } from "../services/vendedorService.js"
+import {
+  listarNotasDoVendedor,
+  buscarNota,
+  buscarValorMensal,
+  buscarValorComissao,
+} from "../services/notaService.js"
+import { getFriendlyError } from "../services/api.js"
+import { mesAtual } from "../utils/format.js"
+
+export default function HomePage() {
+  const toast = useToast()
+  const { sair } = useAuth()
+
+  // Evita recriar o callback de erro a cada render (usado pelo hook).
+  const toastRef = useRef(toast)
+  toastRef.current = toast
+  const notificarErro = useCallback((msg) => toastRef.current.erro(msg), [])
+
+  const { vendedores, carregando: carregandoVendedores, recarregar } = useVendedores(notificarErro)
+
+  // Vendedor selecionado
+  const [selecionado, setSelecionado] = useState(null)
+
+  // Busca de vendedor por ID
+  const [buscaVendedor, setBuscaVendedor] = useState(null) // vendedor encontrado
+  const [buscandoVendedor, setBuscandoVendedor] = useState(false)
+
+  // Notas
+  const [notas, setNotas] = useState([])
+  const [carregandoNotas, setCarregandoNotas] = useState(false)
+  const [buscaNota, setBuscaNota] = useState(null)
+  const [buscandoNota, setBuscandoNota] = useState(false)
+
+  // Valores financeiros
+  const [mes, setMes] = useState(mesAtual())
+  const [valorMensal, setValorMensal] = useState(null)
+  const [valorComissao, setValorComissao] = useState(null)
+  const [carregandoValores, setCarregandoValores] = useState(false)
+
+  // Modais
+  const [modalVendedor, setModalVendedor] = useState(false)
+  const [modalNota, setModalNota] = useState(false)
+  const [modalConfig, setModalConfig] = useState(false)
+  const [notaDetalhe, setNotaDetalhe] = useState(null)
+
+  const lista = buscaVendedor ? [buscaVendedor] : vendedores
+
+  // Carrega as notas do vendedor selecionado.
+  const carregarNotas = useCallback(
+    async (idVendedor) => {
+      setCarregandoNotas(true)
+      setBuscaNota(null)
+      try {
+        const dados = await listarNotasDoVendedor(idVendedor)
+        setNotas(Array.isArray(dados) ? dados : [])
+      } catch (error) {
+        toastRef.current.erro(getFriendlyError(error, "Não foi possível carregar as notas."))
+        setNotas([])
+      } finally {
+        setCarregandoNotas(false)
+      }
+    },
+    [],
+  )
+
+  // Carrega valor mensal e comissão do vendedor selecionado para o mês escolhido.
+  const carregarValores = useCallback(async (idVendedor, mesRef) => {
+    setCarregandoValores(true)
+    try {
+      const [vm, vc] = await Promise.all([
+        buscarValorMensal(idVendedor, mesRef),
+        buscarValorComissao(idVendedor, mesRef),
+      ])
+      // A API pode retornar número puro ou objeto; tratamos ambos.
+      setValorMensal(typeof vm === "object" && vm !== null ? vm.valor ?? vm.total ?? vm : vm)
+      setValorComissao(typeof vc === "object" && vc !== null ? vc.valor ?? vc.total ?? vc : vc)
+    } catch (error) {
+      toastRef.current.erro(getFriendlyError(error, "Não foi possível carregar os valores do mês."))
+      setValorMensal(null)
+      setValorComissao(null)
+    } finally {
+      setCarregandoValores(false)
+    }
+  }, [])
+
+  // Ao selecionar um vendedor, busca notas e valores.
+  useEffect(() => {
+    if (selecionado?.id != null) {
+      carregarNotas(selecionado.id)
+    } else {
+      setNotas([])
+    }
+  }, [selecionado, carregarNotas])
+
+  useEffect(() => {
+    if (selecionado?.id != null) {
+      carregarValores(selecionado.id, mes)
+    } else {
+      setValorMensal(null)
+      setValorComissao(null)
+    }
+  }, [selecionado, mes, carregarValores])
+
+  function selecionarVendedor(v) {
+    setSelecionado(v)
+    setNotaDetalhe(null)
+  }
+
+  // Busca de vendedor por ID (sidebar).
+  async function handleBuscarVendedorId(id) {
+    setBuscandoVendedor(true)
+    try {
+      const v = await buscarVendedorPorId(id)
+      if (v && v.id != null) {
+        setBuscaVendedor(v)
+        selecionarVendedor(v)
+      } else {
+        setBuscaVendedor(null)
+        toast.info("Nenhum vendedor encontrado com esse ID.")
+      }
+    } catch (error) {
+      setBuscaVendedor(null)
+      toast.erro(getFriendlyError(error, "Vendedor não encontrado."))
+    } finally {
+      setBuscandoVendedor(false)
+    }
+  }
+
+  function limparBuscaVendedor() {
+    setBuscaVendedor(null)
+  }
+
+  // Busca de nota por número (dentro do vendedor selecionado).
+  async function handleBuscarNota(numero) {
+    if (!selecionado) return
+    setBuscandoNota(true)
+    try {
+      const nota = await buscarNota(numero)
+      if (nota && nota.numeroNotaFiscal != null) {
+        setBuscaNota([nota])
+      } else {
+        setBuscaNota([])
+        toast.info("Nenhuma nota encontrada com esse número.")
+      }
+    } catch (error) {
+      setBuscaNota([])
+      toast.erro(getFriendlyError(error, "Nota não encontrada."))
+    } finally {
+      setBuscandoNota(false)
+    }
+  }
+
+  function limparBuscaNota() {
+    setBuscaNota(null)
+  }
+
+  // Atualiza tudo após cadastrar/excluir nota.
+  function recarregarNotas() {
+    setModalNota(false)
+    setNotaDetalhe(null)
+    if (selecionado) {
+      carregarNotas(selecionado.id)
+      carregarValores(selecionado.id, mes)
+    }
+  }
+
+  // Após adicionar vendedor.
+  async function aoAdicionarVendedor(novo) {
+    setModalVendedor(false)
+    await recarregar()
+    if (novo && novo.id != null) selecionarVendedor(novo)
+  }
+
+  // Após mudanças nas configurações (comissão, exclusões).
+  async function aoMudarVendedores() {
+    await recarregar()
+    // Se o vendedor selecionado foi excluído, limpa a seleção.
+    if (selecionado) {
+      try {
+        const atual = await buscarVendedorPorId(selecionado.id)
+        setSelecionado(atual && atual.id != null ? atual : null)
+      } catch {
+        setSelecionado(null)
+      }
+    }
+  }
+
+  const notasExibidas = buscaNota ?? notas
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      <VendedorSidebar
+        vendedores={lista}
+        carregando={carregandoVendedores}
+        selecionado={selecionado}
+        onSelecionar={selecionarVendedor}
+        onAdicionar={() => setModalVendedor(true)}
+        onBuscarId={handleBuscarVendedorId}
+        buscando={buscandoVendedor}
+        buscaAtiva={Boolean(buscaVendedor)}
+        onLimparBusca={limparBuscaVendedor}
+      />
+
+      <main className="flex flex-1 flex-col overflow-hidden">
+        {/* Barra superior */}
+        <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Painel de gestão</h1>
+            <p className="text-sm text-muted-foreground">Vendedores e notas fiscais</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setModalConfig(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="Configurações"
+              title="Configurações"
+            >
+              <Settings size={18} />
+            </button>
+            <Button variant="outline" onClick={sair}>
+              <LogOut size={16} />
+              Sair
+            </Button>
+          </div>
+        </header>
+
+        {/* Conteúdo */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {!selecionado ? (
+            <div className="flex h-full items-center justify-center">
+              <EmptyState
+                icon={UserRound}
+                titulo="Selecione um vendedor"
+                descricao="Escolha um vendedor na lista ao lado para ver suas notas fiscais e valores mensais."
+              />
+            </div>
+          ) : (
+            <div className="mx-auto flex max-w-5xl flex-col gap-6">
+              {/* Cabeçalho do vendedor */}
+              <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">{selecionado.nome}</h2>
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <Hash size={14} /> ID {selecionado.id}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <BadgePercent size={14} /> Comissão {selecionado.comissao}%
+                    </span>
+                  </div>
+                </div>
+                <MonthPicker value={mes} onChange={setMes} />
+              </div>
+
+              {/* Cartões financeiros */}
+              <FinanceCards
+                valorMensal={valorMensal}
+                valorComissao={valorComissao}
+                carregando={carregandoValores}
+              />
+
+              {/* Tabela de notas */}
+              <NotasTable
+                notas={notasExibidas}
+                carregando={carregandoNotas}
+                onAdicionar={() => setModalNota(true)}
+                onSelecionarNota={(n) => setNotaDetalhe(n)}
+                onBuscarNumero={handleBuscarNota}
+                buscando={buscandoNota}
+                buscaAtiva={Boolean(buscaNota)}
+                onLimparBusca={limparBuscaNota}
+              />
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Modais */}
+      <AddVendedorModal
+        open={modalVendedor}
+        onClose={() => setModalVendedor(false)}
+        onSucesso={aoAdicionarVendedor}
+      />
+      <AddNotaModal
+        open={modalNota}
+        onClose={() => setModalNota(false)}
+        onSucesso={recarregarNotas}
+        vendedor={selecionado}
+      />
+      <NotaDetalheModal
+        open={Boolean(notaDetalhe)}
+        onClose={() => setNotaDetalhe(null)}
+        nota={notaDetalhe}
+        vendedor={selecionado}
+        onExcluida={recarregarNotas}
+      />
+      <SettingsModal
+        open={modalConfig}
+        onClose={() => setModalConfig(false)}
+        vendedores={vendedores}
+        onVendedoresMudaram={aoMudarVendedores}
+      />
+    </div>
+  )
+}
