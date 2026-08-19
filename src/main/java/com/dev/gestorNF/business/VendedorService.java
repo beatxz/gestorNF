@@ -11,6 +11,8 @@ import com.dev.gestorNF.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class VendedorService {
@@ -21,11 +23,20 @@ public class VendedorService {
     private final VendedorRepository vendedorRepository;
 
     public VendedorDTOResponse cadastroVendedor(String token, VendedorDTORequest vendedorDTORequest) {
+
         String email = jwtUtil.extrairEmailToken(token.substring(7));
         UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
-        VendedorEntity vendedorEntity = vendedorConverter.paraVendedorEntity(vendedorDTORequest);
-        return vendedorConverter.paraVendedorDTOResponse(vendedorRepository.save(vendedorEntity));
+                .orElseThrow(() ->
+                        new RuntimeException("Email não encontrado " + email));
+
+        VendedorEntity vendedorEntity =
+                vendedorConverter.paraVendedorEntity(vendedorDTORequest);
+
+        vendedorEntity.setUsuario(usuarioEntity);
+
+        return vendedorConverter.paraVendedorDTOResponse(
+                vendedorRepository.save(vendedorEntity)
+        );
     }
 
     public boolean VendedorExiste(Long idVendedor) {
@@ -38,6 +49,17 @@ public class VendedorService {
         } else {
             throw new RuntimeException("Id não encontrado " + idVendedor);
         }
+    }
+    public List<VendedorDTOResponse> buscarVendedoresDoUsuario(String token) {
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+        usuarioRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Email não encontrado " + email));
+
+        return vendedorRepository.findByUsuarioEmail(email)
+                .stream()
+                .map(vendedorConverter::paraVendedorDTOResponse)
+                .toList();
     }
     public VendedorDTOResponse buscarVendedorPorId(String token,Long idVendedor){
         String email = jwtUtil.extrairEmailToken(token.substring(7));

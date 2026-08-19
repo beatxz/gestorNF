@@ -11,15 +11,17 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name ="vendedor")
+@Table(name = "vendedor")
 public class VendedorEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idVendedor;
-    @Column(name= "nome ", length = 100)
+
+    @Column(name = "nome", length = 100)
     private String nome;
-    @Column(name= "comissao",length = 4)
+
+    @Column(name = "comissao", length = 4)
     private double comissao;
 
     @ManyToOne
@@ -32,5 +34,4 @@ public class VendedorEntity {
             orphanRemoval = true
     )
     private List<NotaFiscalEntity> notasFiscais;
-
 }

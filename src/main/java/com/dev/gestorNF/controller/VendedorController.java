@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/vendedor")
@@ -49,8 +51,15 @@ public class VendedorController {
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @GetMapping("/{id}")
     public ResponseEntity<VendedorDTOResponse> buscaVendedorId(@RequestHeader(name = "Authorization",required = false) String token,
-                                                               @RequestParam ("id") Long idVendedor ){
+                                                               @PathVariable ("id") Long idVendedor ){
         return ResponseEntity.ok(vendedorService.buscarVendedorPorId(token,idVendedor));
+    }
+    @GetMapping
+    public ResponseEntity<List<VendedorDTOResponse>> buscarVendedores(
+            @RequestHeader(name = "Authorization", required = false) String token) {
+
+        return ResponseEntity.ok(vendedorService.buscarVendedoresDoUsuario(token)
+        );
     }
     @Operation(summary = "Alterar comissão", description = "Altera comissão do vendedor")
     @ApiResponse(responseCode = "200" , description = "Comissão alterada com sucesso")
