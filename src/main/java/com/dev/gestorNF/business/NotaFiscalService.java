@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.YearMonth;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -54,20 +55,36 @@ public class NotaFiscalService {
         notaFiscalRepository.deleteByNumeroNotaFiscal(numeroNotaFiscal);
     }
 
-    public NotaFiscalDTOResponse buscarNotaFiscal(String token, Long idVendedor, int numeroNotaFiscal) {
+    public NotaFiscalDTOResponse buscarNotaFiscal(String token, int numeroNotaFiscal) {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
         usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
-
-        vendedorRepository.findById(idVendedor)
-                .orElseThrow(() -> new RuntimeException("Vendedor não encontrado " + idVendedor));
-
-        NotaFiscalEntity notaFiscalEntity = notaFiscalRepository.findByNumeroNotaFiscal(numeroNotaFiscal, idVendedor)
                 .orElseThrow(() ->
-                        new RuntimeException("Nota fiscal não encontrada"));
+                        new RuntimeException("Email não encontrado " + email));
+
+        NotaFiscalEntity notaFiscalEntity =
+                notaFiscalRepository.findByNumeroNotaFiscal(numeroNotaFiscal)
+                        .orElseThrow(() ->
+                                new RuntimeException("Nota fiscal não encontrada"));
 
         return notaFiscalConverter
                 .paraNotaFiscalDTOResponse(notaFiscalEntity);
+    }
+
+    public List<NotaFiscalDTOResponse> buscarNotasDoVendedor(String token, Long idVendedor) {
+
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+        usuarioRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Email não encontrado " + email));
+
+        vendedorRepository.findById(idVendedor)
+                .orElseThrow(() ->
+                        new RuntimeException("Vendedor não encontrado " + idVendedor));
+
+        return notaFiscalRepository.findByVendedorIdVendedor(idVendedor)
+                .stream()
+                .map(notaFiscalConverter::paraNotaFiscalDTOResponse)
+                .toList();
     }
 
     public Double valorTotalMensal(String token, Long idVendedor, YearMonth yearMonth) {

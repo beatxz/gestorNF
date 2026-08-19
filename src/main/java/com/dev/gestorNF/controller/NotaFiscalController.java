@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.YearMonth;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,10 +41,10 @@ public class NotaFiscalController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @GetMapping
-    public ResponseEntity<NotaFiscalDTOResponse>buscarNotaFiscal(@RequestHeader(name = "Authorization",required = false) String token,
-                                                                 @RequestParam("id") Long idVendedor,
-                                                                 @RequestParam("notaFiscal") int numeroNotaFiscal){
-        return ResponseEntity.ok(notaFiscalService.buscarNotaFiscal(token,idVendedor,numeroNotaFiscal));
+    public ResponseEntity<NotaFiscalDTOResponse> buscarNotaFiscal(@RequestHeader(name = "Authorization", required = false) String token,
+                                                                  @RequestParam("notaFiscal") int numeroNotaFiscal) {
+
+        return ResponseEntity.ok(notaFiscalService.buscarNotaFiscal(token, numeroNotaFiscal));
     }
     @Operation(summary = "Deletar nota fiscal", description = "Deleta nota Fiscal")
     @ApiResponse(responseCode = "200" , description = "Nota deletada com sucesso")
@@ -54,6 +55,20 @@ public class NotaFiscalController {
     public ResponseEntity<Void> DeletaNotaFiscal(@RequestParam("numeroNotaFiscal") int numeroNotaFiscal){
         notaFiscalService.deletarNotaFiscal(numeroNotaFiscal);
         return ResponseEntity.ok().build();
+    }
+    @Operation(summary = "Buscar todas as notas fiscais", description = "Busca todas as notas fiscais")
+    @ApiResponse(responseCode = "200" , description = "Notas encontradas com sucesso")
+    @ApiResponse(responseCode = "400", description = "Nota não encontrada")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+    @GetMapping("/vendedor/{idVendedor}")
+    public ResponseEntity<List<NotaFiscalDTOResponse>> buscarNotasDoVendedor(
+            @RequestHeader(name = "Authorization", required = false) String token,
+            @PathVariable Long idVendedor) {
+
+        return ResponseEntity.ok(
+                notaFiscalService.buscarNotasDoVendedor(token, idVendedor)
+        );
     }
     @Operation(summary = "Valor total de notas fiscais mensal", description = "Valor total mensal de notas fiscis")
     @ApiResponse(responseCode = "200" , description = "Valor calculado com sucesso")
