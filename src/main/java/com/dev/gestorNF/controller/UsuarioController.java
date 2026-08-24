@@ -47,6 +47,16 @@ public class UsuarioController {
         usuarioService.deletaUsuarioEmail(email);
          return ResponseEntity.ok().build();
     }
+    @Operation(summary = "Verificar email", description = "verifica usuario por email")
+    @ApiResponse(responseCode = "200", description = "Usuário verificado com sucesso")
+    @ApiResponse(responseCode = "400", description = "Usuário não verificado")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+    @GetMapping("/verificar-email")
+    public ResponseEntity<String> verificarEmail(@RequestParam String token) {
+        usuarioService.verificarEmail(token);
+        return ResponseEntity.ok("Email verificado com sucesso!"
+        );
+    }
     @Operation(summary = "Buscar usuário", description = "Busca um usuário por Email")
     @ApiResponse(responseCode = "200", description = "usuário encontrado com sucesso")
     @ApiResponse(responseCode = "400", description = "usuário não encontrado")

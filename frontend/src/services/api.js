@@ -4,7 +4,7 @@ import axios from "axios"
  * Cliente HTTP central do GestorNF.
  *
  * Toda a comunicação com o backend Java/Spring Boot passa por aqui.
- * Para trocar o ambiente, basta alterar a variável VITE_API_URL no arquivo .env.
+ * Para trocar o ambiente, basta alterar a variável VITE_API_URL no arquivo .env.properties.
  */
 
 // Chave usada para guardar o token JWT no navegador.
