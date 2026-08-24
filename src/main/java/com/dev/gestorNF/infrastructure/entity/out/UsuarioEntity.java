@@ -19,10 +19,14 @@ public class UsuarioEntity {
     private Long id;
     @Column(name= "nome", length = 100)
     private String nome;
-    @Column(name = "email",length = 100)
+    @Column(name = "email", length = 100, nullable = false, unique = true)
     private String email;
-    @Column(name = "senha")
+    @Column(name = "senha", nullable = false)
     private String senha;
+    @Column(name = "emailVerificado")
+    private boolean emailVerificado;
+    @Column(name = "tokenVerificacao")
+    private String tokenVerificacao;
 
     @OneToMany(mappedBy = "usuario")
     private List<VendedorEntity> vendedor;

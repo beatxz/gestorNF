@@ -18,6 +18,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
@@ -27,6 +29,7 @@ public class UsuarioService {
     private final UsuarioConverter usuarioConverter;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
 
 
     public boolean verificaEmailExiste(String email){
@@ -44,12 +47,41 @@ public class UsuarioService {
         }
 
     }
-    public UsuarioDTOResponse salvarUsuario(UsuarioDTORequest usuarioDTORequest){
+    public UsuarioDTOResponse salvarUsuario(UsuarioDTORequest usuarioDTORequest) {
+
         emailExiste(usuarioDTORequest.getEmail());
-        usuarioDTORequest.setSenha(passwordEncoder.encode(usuarioDTORequest.getSenha()));
-        UsuarioEntity usuarioEntity = usuarioConverter.paraUsuarioEntity(usuarioDTORequest);
-        return usuarioConverter.paraUsuarioDTOResponse(usuarioRepository.save(usuarioEntity));
+
+        usuarioDTORequest.setSenha(
+                passwordEncoder.encode(usuarioDTORequest.getSenha())
+        );
+
+        UsuarioEntity usuarioEntity =
+                usuarioConverter.paraUsuarioEntity(usuarioDTORequest);
+
+        String tokenGerado = UUID.randomUUID().toString();
+
+        usuarioEntity.setTokenVerificacao(tokenGerado);
+        usuarioEntity.setEmailVerificado(false);
+
+        UsuarioEntity usuarioSalvo =
+                usuarioRepository.save(usuarioEntity);
+
+        emailService.enviarEmailVerificacao(usuarioSalvo.getEmail(), usuarioSalvo.getNome(), usuarioSalvo.getTokenVerificacao());
+
+        return usuarioConverter.paraUsuarioDTOResponse(usuarioSalvo);
     }
+
+    public void verificarEmail(String token) {
+
+        UsuarioEntity usuario = usuarioRepository.findByTokenVerificacao(token)
+                .orElseThrow(() -> new RuntimeException("Token de verificação inválido"));
+
+        usuario.setEmailVerificado(true);
+        usuario.setTokenVerificacao(null);
+
+        usuarioRepository.save(usuario);
+    }
+
     public String autenticarUsuario(UsuarioDTORequest usuarioDTORequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
