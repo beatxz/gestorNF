@@ -39,22 +39,13 @@ public class EmailService {
 
         try {
 
-            MimeMessage mensagem =
-                    javaMailSender.createMimeMessage();
+            MimeMessage mensagem = javaMailSender.createMimeMessage();
 
             MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            mensagem,
-                            true,
-                            StandardCharsets.UTF_8.name()
-                    );
+                    new MimeMessageHelper(mensagem, true, StandardCharsets.UTF_8.name());
 
             helper.setFrom(
-                    new InternetAddress(
-                            remetente,
-                            nomeRemetente
-                    )
-            );
+                    new InternetAddress(remetente, nomeRemetente));
 
             helper.setTo(email);
 
