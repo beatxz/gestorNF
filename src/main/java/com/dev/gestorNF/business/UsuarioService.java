@@ -1,5 +1,6 @@
 package com.dev.gestorNF.business;
 
+import com.dev.gestorNF.business.dto.in.RedefinirSenhaDTORequest;
 import com.dev.gestorNF.business.dto.in.UsuarioDTORequest;
 import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
 import com.dev.gestorNF.business.mapper.UsuarioConverter;
@@ -18,6 +19,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -78,6 +80,40 @@ public class UsuarioService {
 
         usuario.setEmailVerificado(true);
         usuario.setTokenVerificacao(null);
+
+        usuarioRepository.save(usuario);
+    }
+    public void solicitarRecuperacaoSenha(String email){
+        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(()-> new RuntimeException("Usuario não encontrado"));
+
+        String token = UUID.randomUUID().toString();
+
+        usuario.setTokenRecuperacaoSenha(token);
+        usuario.setExpiracaoTokenRecuperacao(
+                LocalDateTime.now().plusMinutes(30));
+        usuarioRepository.save(usuario);
+
+        emailService.enviarEmailRecuperacaoSenha(
+                usuario.getEmail(),
+                usuario.getNome(),
+                token);
+    }
+    public void redefinirSenha(RedefinirSenhaDTORequest request) {
+
+        UsuarioEntity usuario = usuarioRepository
+                .findByTokenRecuperacaoSenha(request.getToken())
+                .orElseThrow(() -> new RuntimeException("Token de recuperação inválido"));
+
+        if (usuario.getExpiracaoTokenRecuperacao()
+                .isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token de recuperação expirado");
+        }
+
+        usuario.setSenha(passwordEncoder.encode(request.getNovaSenha()));
+
+        usuario.setTokenRecuperacaoSenha(null);
+        usuario.setExpiracaoTokenRecuperacao(null);
 
         usuarioRepository.save(usuario);
     }

@@ -16,6 +16,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity,Long> {
 
     Optional<UsuarioEntity> findByTokenVerificacao(String tokenVerificacao);
 
+    Optional<UsuarioEntity>findByTokenRecuperacaoSenha(String tokenRecuperacaoSenha);
 
     @Transactional
      void deleteByEmail(String email);

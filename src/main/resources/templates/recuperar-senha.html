@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Recuperação de senha</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header {
+            color: #333;
+        }
+
+        .content {
+            margin: 25px 0;
+            color: #555;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 30px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Recuperação de senha</h1>
+    </div>
+
+    <div class="content">
+
+        <p>
+            Olá, <strong th:text="${nome}">Nome</strong>!
+        </p>
+
+        <p>
+            Recebemos uma solicitação para redefinir a senha
+            da sua conta no GestorNF.
+        </p>
+
+        <p>
+            Clique no botão abaixo para criar uma nova senha:
+        </p>
+
+        <a
+                class="button"
+                th:href="${linkRecuperacao}">
+            Redefinir minha senha
+        </a>
+
+        <p>
+            Este link será válido por 30 minutos.
+        </p>
+
+    </div>
+
+    <div class="footer">
+        <p>
+            Se você não solicitou a recuperação de senha,
+            pode ignorar este email.
+        </p>
+
+        <p>
+            GestorNF
+        </p>
+    </div>
+
+</div>
+
+</body>
+</html>>

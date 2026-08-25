@@ -3,6 +3,7 @@ package com.dev.gestorNF.infrastructure.entity.out;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -27,6 +28,11 @@ public class UsuarioEntity {
     private boolean emailVerificado;
     @Column(name = "tokenVerificacao")
     private String tokenVerificacao;
+    @Column(name= "tokenRecuperacaoSenha")
+    private String tokenRecuperacaoSenha;
+    @Column(name= "expiracaoTokenRecuperacao")
+    private LocalDateTime expiracaoTokenRecuperacao ;
+
 
     @OneToMany(mappedBy = "usuario")
     private List<VendedorEntity> vendedor;
