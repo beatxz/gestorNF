@@ -30,6 +30,9 @@ public class EmailService {
     @Value("${envio.email.url-verificacao}")
     private String urlVerificacao;
 
+    @Value("${envio.email.url-recuperacao}")
+    private String urlRecuperacao;
+
 
     public void enviarEmailVerificacao(
             String email,
@@ -42,10 +45,15 @@ public class EmailService {
             MimeMessage mensagem = javaMailSender.createMimeMessage();
 
             MimeMessageHelper helper =
-                    new MimeMessageHelper(mensagem, true, StandardCharsets.UTF_8.name());
+                    new MimeMessageHelper(
+                            mensagem,
+                            true,
+                            StandardCharsets.UTF_8.name()
+                    );
 
             helper.setFrom(
-                    new InternetAddress(remetente, nomeRemetente));
+                    new InternetAddress(remetente, nomeRemetente)
+            );
 
             helper.setTo(email);
 
@@ -79,6 +87,66 @@ public class EmailService {
 
             throw new RuntimeException(
                     "Erro ao enviar email de verificação",
+                    e
+            );
+        }
+    }
+
+
+    public void enviarEmailRecuperacaoSenha(
+            String email,
+            String nome,
+            String token
+    ) {
+
+        try {
+
+            MimeMessage mensagem =
+                    javaMailSender.createMimeMessage();
+
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(
+                            mensagem,
+                            true,
+                            StandardCharsets.UTF_8.name()
+                    );
+
+            helper.setFrom(
+                    new InternetAddress(remetente, nomeRemetente)
+            );
+
+            helper.setTo(email);
+
+            helper.setSubject(
+                    "Recuperação de senha - GestorNF"
+            );
+
+            Context context = new Context();
+
+            context.setVariable("nome", nome);
+
+            context.setVariable(
+                    "linkRecuperacao",
+                    urlRecuperacao + "?token=" + token
+            );
+
+            String template =
+                    templateEngine.process(
+                            "recuperar-senha",
+                            context
+                    );
+
+            helper.setText(template, true);
+
+            javaMailSender.send(mensagem);
+
+        } catch (
+                MessagingException |
+                UnsupportedEncodingException e
+        ) {
+
+            throw new RuntimeException(
+                    "Erro ao enviar email de recuperação de senha",
                     e
             );
         }
