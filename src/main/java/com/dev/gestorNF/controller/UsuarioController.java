@@ -1,6 +1,7 @@
 package com.dev.gestorNF.controller;
 
 import com.dev.gestorNF.business.UsuarioService;
+import com.dev.gestorNF.business.dto.in.RedefinirSenhaDTORequest;
 import com.dev.gestorNF.business.dto.in.UsuarioDTORequest;
 import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
 import com.dev.gestorNF.infrastructure.security.SecurityConfig;
@@ -56,6 +57,24 @@ public class UsuarioController {
         usuarioService.verificarEmail(token);
         return ResponseEntity.ok("Email verificado com sucesso!"
         );
+    }
+    @Operation(summary = "Solicitação para recuperar senha ", description = "Solicitação para recuperar senha")
+    @ApiResponse(responseCode = "200", description = "Solicitação realizada com sucesso")
+    @ApiResponse(responseCode = "400", description = "Usuário não encontrado")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+    @PostMapping("/esqueci-senha")
+    public ResponseEntity<String> solicitarRecuperacaoSenha(@RequestParam String email) {
+        usuarioService.solicitarRecuperacaoSenha(email);
+        return ResponseEntity.ok("Solicitação de recuperação enviada");
+    }
+    @Operation(summary = "Redefinir senha ", description = "Redefinir senha")
+    @ApiResponse(responseCode = "200", description = "Redefinição realizada com sucesso")
+    @ApiResponse(responseCode = "400", description = "Usuário não encontrado")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+    @PostMapping("/redefinir-senha")
+    public ResponseEntity<String> redefinirSenha(@RequestBody RedefinirSenhaDTORequest request) {
+        usuarioService.redefinirSenha(request);
+        return ResponseEntity.ok("Senha redefinida com sucesso!");
     }
     @Operation(summary = "Buscar usuário", description = "Busca um usuário por Email")
     @ApiResponse(responseCode = "200", description = "usuário encontrado com sucesso")
