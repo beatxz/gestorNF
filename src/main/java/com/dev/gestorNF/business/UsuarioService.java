@@ -84,6 +84,14 @@ public class UsuarioService {
 
     public String autenticarUsuario(UsuarioDTORequest usuarioDTORequest) {
         try {
+            UsuarioEntity usuario = usuarioRepository.findByEmail(
+                    usuarioDTORequest.getEmail())
+                    .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado")
+            );
+            if (!usuario.isEmailVerificado()) {
+                throw new UnauthorizedException("Email ainda não foi verificado");
+            }
+
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(usuarioDTORequest.getEmail(),
                             usuarioDTORequest.getSenha())
