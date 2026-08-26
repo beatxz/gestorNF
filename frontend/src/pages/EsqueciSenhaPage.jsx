@@ -9,30 +9,24 @@ import Input from "../components/ui/Input.jsx"
 
 import Button from "../components/ui/Button.jsx"
 
-import { login } from "../services/authService.js"
+import api from "../services/api.js"
 
 import { getFriendlyError } from "../services/api.js"
-
-import { useAuth } from "../hooks/useAuth.jsx"
 
 import { useToast } from "../hooks/useToast.jsx"
 
 
-
-
-export default function LoginPage() {
+export default function EsqueciSenhaPage() {
 
   const [email, setEmail] = useState("")
-
-  const [senha, setSenha] = useState("")
 
   const [erros, setErros] = useState({})
 
   const [carregando, setCarregando] = useState(false)
 
-  const navigate = useNavigate()
+  const [enviado, setEnviado] = useState(false)
 
-  const { entrar } = useAuth()
+  const navigate = useNavigate()
 
   const toast = useToast()
 
@@ -41,14 +35,13 @@ export default function LoginPage() {
 
     const novos = {}
 
-    if (!email.trim()) novos.email = "Informe o e-mail."
-
-    if (!senha) novos.senha = "Informe a senha."
+    if (!email.trim()) {
+      novos.email = "Informe o e-mail."
+    }
 
     setErros(novos)
 
     return Object.keys(novos).length === 0
-
   }
 
 
@@ -62,18 +55,21 @@ export default function LoginPage() {
 
     try {
 
-      await login({ email: email.trim(), senha })
+      await api.post(
+        `/usuario/esqueci-senha?email=${encodeURIComponent(email.trim())}`
+      )
 
-      entrar()
+      setEnviado(true)
 
-      toast.sucesso("Login realizado com sucesso!")
-
-      navigate("/")
+      toast.sucesso("Link de recuperação enviado para seu e-mail.")
 
     } catch (error) {
 
       toast.erro(
-        getFriendlyError(error, "E-mail ou senha inválidos.")
+        getFriendlyError(
+          error,
+          "Não foi possível enviar o link de recuperação."
+        )
       )
 
     } finally {
@@ -85,6 +81,43 @@ export default function LoginPage() {
   }
 
 
+  if (enviado) {
+
+    return (
+
+      <AuthLayout>
+
+        <div className="text-center">
+
+          <h2 className="text-2xl font-bold text-foreground">
+            E-mail enviado!
+          </h2>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            Enviamos um link para redefinir sua senha.
+          </p>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            Verifique sua caixa de entrada e clique no link recebido.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="mt-6 text-sm font-medium text-accent hover:underline"
+          >
+            Voltar para o login
+          </button>
+
+        </div>
+
+      </AuthLayout>
+
+    )
+
+  }
+
+
   return (
 
     <AuthLayout>
@@ -92,11 +125,11 @@ export default function LoginPage() {
       <div className="mb-6">
 
         <h2 className="text-2xl font-bold text-foreground">
-          Bem-vindo de volta
+          Esqueci minha senha
         </h2>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          Entre com sua conta para continuar.
+          Informe seu e-mail e enviaremos um link para redefinir sua senha.
         </p>
 
       </div>
@@ -120,37 +153,13 @@ export default function LoginPage() {
         />
 
 
-        <Input
-          id="senha"
-          label="Senha"
-          type="password"
-          placeholder="••••••••"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          error={erros.senha}
-          autoComplete="current-password"
-        />
-
-
-        <div className="-mt-2 text-right">
-
-          <Link
-            to="/esqueci-senha"
-            className="text-sm font-medium text-accent hover:underline"
-          >
-            Esqueci minha senha
-          </Link>
-
-        </div>
-
-
         <Button
           type="submit"
           size="lg"
           loading={carregando}
           className="mt-2 w-full"
         >
-          Entrar
+          Enviar link
         </Button>
 
       </form>
@@ -158,13 +167,13 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
 
-        Não tem uma conta?{" "}
+        Lembrou sua senha?{" "}
 
         <Link
-          to="/cadastro"
+          to="/login"
           className="font-medium text-accent hover:underline"
         >
-          Cadastre-se
+          Voltar para o login
         </Link>
 
       </p>
