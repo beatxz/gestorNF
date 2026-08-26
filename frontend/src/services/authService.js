@@ -22,6 +22,14 @@ export async function login({ email, senha }) {
   setToken(token)
   return token
 }
+export async function redefinirSenha({ token, novaSenha }) {
+  const { data } = await api.post("/usuario/redefinir-senha", {
+    token,
+    novaSenha,
+  })
+
+  return data
+}
 
 // Deletar usuário -> DELETE /usuario/{email}
 export async function deletarUsuario(email) {
