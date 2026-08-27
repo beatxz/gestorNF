@@ -75,7 +75,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "http://192.168.100.4:3000"
+                "http://192.168.100.4:3000",
+                "https://gestornf.vercel.app"
         ));
 
         configuration.setAllowedMethods(List.of(
