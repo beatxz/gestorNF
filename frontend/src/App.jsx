@@ -1,63 +1,46 @@
-import { Routes, Route, Navigate } from "react-router-dom"
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import { useAuth } from "./hooks/useAuth.jsx"
+import { useAuth } from "./hooks/useAuth.jsx";
 
-import LoginPage from "./pages/LoginPage.jsx"
-import CadastroPage from "./pages/CadastroPage.jsx"
-import HomePage from "./pages/HomePage.jsx"
-import RedefinirSenhaPage from "./pages/RedefinirSenhaPage.jsx"
-import EsqueciSenhaPage from "./pages/EsqueciSenhaPage.jsx"
+import LoginPage from "./pages/LoginPage.jsx";
+import CadastroPage from "./pages/CadastroPage.jsx";
+import HomePage from "./pages/HomePage.jsx";
+import RedefinirSenhaPage from "./pages/RedefinirSenhaPage.jsx";
+import EsqueciSenhaPage from "./pages/EsqueciSenhaPage.jsx";
 
 function RotaProtegida({ children }) {
-
-  const { autenticado } = useAuth()
+  const { autenticado } = useAuth();
 
   if (!autenticado) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
-  return children
+  return children;
 }
 
 export default function App() {
-
-  const { autenticado } = useAuth()
+  const { autenticado } = useAuth();
 
   return (
-
     <Routes>
-
       <Route
         path="/login"
-        element={
-          autenticado
-            ? <Navigate to="/" replace />
-            : <LoginPage />
-        }
+        element={autenticado ? <Navigate to="/" replace /> : <LoginPage />}
       />
 
       <Route
         path="/cadastro"
+        element={autenticado ? <Navigate to="/" replace /> : <CadastroPage />}
+      />
+      <Route
+        path="/esqueci-senha"
         element={
-          autenticado
-            ? <Navigate to="/" replace />
-            : <CadastroPage />
+          autenticado ? <Navigate to="/" replace /> : <EsqueciSenhaPage />
         }
       />
-      <Route
-  path="/esqueci-senha"
-  element={
-    autenticado
-      ? <Navigate to="/" replace />
-      : <EsqueciSenhaPage />
-  }
-/>
 
       {/* Recuperação de senha */}
-      <Route
-        path="/redefinir-senha"
-        element={<RedefinirSenhaPage />}
-      />
+      <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
 
       <Route
         path="/"
@@ -68,11 +51,7 @@ export default function App() {
         }
       />
 
-      <Route
-        path="*"
-        element={<Navigate to="/" replace />}
-      />
-
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
+  );
 }

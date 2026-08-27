@@ -43,18 +43,25 @@ api.interceptors.request.use((config) => {
 // Se o backend responder 401/403, o token expirou ou é inválido:
 // limpamos o token e mandamos o usuário para o login.
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status = error?.response?.status
-    if (status === 401 || status === 403) {
-      clearToken()
-      // Evita loop caso já estejamos no login.
-      if (!window.location.pathname.includes("/login")) {
+    (response) => response,
+    (error) => {
+      const status = error?.response?.status
+      const caminhoAtual = window.location.pathname
+
+      const rotaPublica =
+          caminhoAtual.includes("/login") ||
+          caminhoAtual.includes("/cadastro") ||
+          caminhoAtual.includes("/esqueci-senha") ||
+          caminhoAtual.includes("/redefinir-senha")
+
+      if ((status === 401 || status === 403) && !rotaPublica) {
+        clearToken()
+
         window.location.href = "/login"
       }
-    }
-    return Promise.reject(error)
-  },
+
+      return Promise.reject(error)
+    },
 )
 
 /**
