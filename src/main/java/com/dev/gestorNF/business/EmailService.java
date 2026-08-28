@@ -1,25 +1,21 @@
 package com.dev.gestorNF.business;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
+
+    @Value("${resend.api.key}")
+    private String apiKey;
 
     @Value("${envio.email.remetente}")
     private String remetente;
@@ -42,24 +38,7 @@ public class EmailService {
 
         try {
 
-            MimeMessage mensagem = javaMailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            mensagem,
-                            true,
-                            StandardCharsets.UTF_8.name()
-                    );
-
-            helper.setFrom(
-                    new InternetAddress(remetente, nomeRemetente)
-            );
-
-            helper.setTo(email);
-
-            helper.setSubject(
-                    "Verificação de email - GestorNF"
-            );
+            Resend resend = new Resend(apiKey);
 
             Context context = new Context();
 
@@ -70,20 +49,22 @@ public class EmailService {
                     urlVerificacao + "?token=" + token
             );
 
-            String template =
-                    templateEngine.process(
-                            "verificar-email",
-                            context
-                    );
+            String template = templateEngine.process(
+                    "verificar-email",
+                    context
+            );
 
-            helper.setText(template, true);
+            CreateEmailOptions emailRequest =
+                    CreateEmailOptions.builder()
+                            .from(nomeRemetente + " <" + remetente + ">")
+                            .to(email)
+                            .subject("Verificação de email - GestorNF")
+                            .html(template)
+                            .build();
 
-            javaMailSender.send(mensagem);
+            resend.emails().send(emailRequest);
 
-        } catch (
-                MessagingException |
-                UnsupportedEncodingException e
-        ) {
+        } catch (Exception e) {
 
             throw new RuntimeException(
                     "Erro ao enviar email de verificação",
@@ -101,25 +82,7 @@ public class EmailService {
 
         try {
 
-            MimeMessage mensagem =
-                    javaMailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            mensagem,
-                            true,
-                            StandardCharsets.UTF_8.name()
-                    );
-
-            helper.setFrom(
-                    new InternetAddress(remetente, nomeRemetente)
-            );
-
-            helper.setTo(email);
-
-            helper.setSubject(
-                    "Recuperação de senha - GestorNF"
-            );
+            Resend resend = new Resend(apiKey);
 
             Context context = new Context();
 
@@ -130,20 +93,22 @@ public class EmailService {
                     urlRecuperacao + "?token=" + token
             );
 
-            String template =
-                    templateEngine.process(
-                            "recuperar-senha",
-                            context
-                    );
+            String template = templateEngine.process(
+                    "recuperar-senha",
+                    context
+            );
 
-            helper.setText(template, true);
+            CreateEmailOptions emailRequest =
+                    CreateEmailOptions.builder()
+                            .from(nomeRemetente + " <" + remetente + ">")
+                            .to(email)
+                            .subject("Recuperação de senha - GestorNF")
+                            .html(template)
+                            .build();
 
-            javaMailSender.send(mensagem);
+            resend.emails().send(emailRequest);
 
-        } catch (
-                MessagingException |
-                UnsupportedEncodingException e
-        ) {
+        } catch (Exception e) {
 
             throw new RuntimeException(
                     "Erro ao enviar email de recuperação de senha",
