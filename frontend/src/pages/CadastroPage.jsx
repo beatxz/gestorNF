@@ -34,7 +34,9 @@ export default function CadastroPage() {
     setCarregando(true)
     try {
       await cadastrarUsuario({ nome: nome.trim(), email: email.trim(), senha })
-      toast.sucesso("Cadastro realizado! Faça login para continuar.")
+      toast.sucesso(
+          "Cadastro realizado! Enviamos um e-mail de verificação. Verifique sua caixa de entrada."
+      )
       navigate("/login")
     } catch (error) {
       toast.erro(getFriendlyError(error, "Não foi possível concluir o cadastro."))
