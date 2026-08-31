@@ -66,7 +66,7 @@ public class UsuarioController {
     @PostMapping("/esqueci-senha")
     public ResponseEntity<String> solicitarRecuperacaoSenha(@RequestParam String email) {
         usuarioService.solicitarRecuperacaoSenha(email);
-        return ResponseEntity.ok("Solicitação de recuperação enviada");
+        return ResponseEntity.ok("Se existir uma conta com esse e-mail, enviaremos as instruções de recuperação.");
     }
     @Operation(summary = "Redefinir senha ", description = "Redefinir senha")
     @ApiResponse(responseCode = "200", description = "Redefinição realizada com sucesso")
