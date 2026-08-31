@@ -40,8 +40,9 @@ public class VendedorController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarVendedor(@PathVariable("id") Long idVendedor){
-        vendedorService.deletaVendedor(idVendedor);
+    public ResponseEntity<Void> deletarVendedor(@RequestHeader(name = "Authorization", required = false) String token,
+                                                @PathVariable("id") Long idVendedor){
+        vendedorService.deletaVendedor(token,idVendedor);
         return ResponseEntity.ok().build();
     }
     @Operation(summary = "Buscar vendedor", description = "Buscar vendedor por Id")

@@ -43,9 +43,9 @@ public class UsuarioController {
     @ApiResponse(responseCode = "200", description = "Usuário deletado com sucesso")
     @ApiResponse(responseCode = "400", description = "Usuário não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
-    @DeleteMapping("/{email}")
-    public ResponseEntity<Void>deletarUsuarioEmail(@PathVariable String email){
-        usuarioService.deletaUsuarioEmail(email);
+    @DeleteMapping
+    public ResponseEntity<Void>deletarUsuarioEmail(@RequestHeader(name = "Authorization", required = false) String token) {
+        usuarioService.deletarUsuario(token);
          return ResponseEntity.ok().build();
     }
     @Operation(summary = "Verificar email", description = "verifica usuario por email")
