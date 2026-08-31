@@ -52,8 +52,9 @@ public class NotaFiscalController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @DeleteMapping
-    public ResponseEntity<Void> DeletaNotaFiscal(@RequestParam("numeroNotaFiscal") int numeroNotaFiscal){
-        notaFiscalService.deletarNotaFiscal(numeroNotaFiscal);
+    public ResponseEntity<Void> DeletaNotaFiscal(@RequestHeader(name = "Authorization", required = false) String token,
+                                                 @RequestParam("numeroNotaFiscal") int numeroNotaFiscal){
+        notaFiscalService.deletarNotaFiscal(token,numeroNotaFiscal);
         return ResponseEntity.ok().build();
     }
     @Operation(summary = "Buscar todas as notas fiscais", description = "Busca todas as notas fiscais")

@@ -54,7 +54,7 @@ api.interceptors.response.use(
           caminhoAtual.includes("/esqueci-senha") ||
           caminhoAtual.includes("/redefinir-senha")
 
-      if ((status === 401 || status === 403) && !rotaPublica) {
+      if ((status === 401 && !rotaPublica)) {
         clearToken()
 
         window.location.href = "/login"
@@ -73,6 +73,7 @@ export function getFriendlyError(error, fallback = "Algo deu errado. Tente novam
     if (typeof data === "string" && data.trim()) return data
     if (data?.message) return data.message
     if (data?.error) return data.error
+      if (error.response.status === 403)return "Recurso não encontrado."
     if (error.response.status === 404) return "Registro não encontrado."
     if (error.response.status === 409) return "Este registro já existe."
     return fallback

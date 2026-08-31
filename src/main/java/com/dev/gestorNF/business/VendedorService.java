@@ -26,33 +26,35 @@ public class VendedorService {
 
         String email = jwtUtil.extrairEmailToken(token.substring(7));
         UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Email não encontrado " + email));
+                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
 
         VendedorEntity vendedorEntity =
                 vendedorConverter.paraVendedorEntity(vendedorDTORequest);
 
         vendedorEntity.setUsuario(usuarioEntity);
 
-        return vendedorConverter.paraVendedorDTOResponse(
-                vendedorRepository.save(vendedorEntity)
-        );
+        VendedorEntity vendedorSalvo =
+                vendedorRepository.save(vendedorEntity);
+
+        return vendedorConverter.paraVendedorDTOResponse(vendedorSalvo);
     }
 
-    public boolean VendedorExiste(Long idVendedor) {
-        return vendedorRepository.existsById(idVendedor);
+    public void deletaVendedor(String token ,Long idVendedor) {
+
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
+
+        VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
+                .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
+
+        vendedorRepository.delete(vendedorEntity);
     }
 
-    public void deletaVendedor(Long idVendedor) {
-        if (VendedorExiste(idVendedor)) {
-            vendedorRepository.deleteById(idVendedor);
-        } else {
-            throw new RuntimeException("Id não encontrado " + idVendedor);
-        }
-    }
     public List<VendedorDTOResponse> buscarVendedoresDoUsuario(String token) {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
-        usuarioRepository.findByEmail(email)
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new RuntimeException("Email não encontrado " + email));
 
@@ -63,18 +65,18 @@ public class VendedorService {
     }
     public VendedorDTOResponse buscarVendedorPorId(String token,Long idVendedor){
         String email = jwtUtil.extrairEmailToken(token.substring(7));
-        usuarioRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
 
-        VendedorEntity vendedor = vendedorRepository.findById(idVendedor)
+        VendedorEntity vendedor = vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
                 .orElseThrow(()->new RuntimeException("Vendedor não encontrado "+idVendedor));
         return vendedorConverter.paraVendedorDTOResponse(vendedor);
 
     }
     public VendedorDTOResponse updateComissao(String token, Long idVendedor,Double comissao){
         String email = jwtUtil.extrairEmailToken(token.substring(7));
-         usuarioRepository.findByEmail(email)
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
                 .orElseThrow(()->new RuntimeException("Email não encontrado "+email));
-        VendedorEntity vendedorEntity = vendedorRepository.findById(idVendedor)
+        VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
                 .orElseThrow(()->new RuntimeException("Id não encontrado "+idVendedor));
          vendedorEntity.setComissao(comissao);
         return vendedorConverter.paraVendedorDTOResponse(vendedorRepository.save(vendedorEntity));

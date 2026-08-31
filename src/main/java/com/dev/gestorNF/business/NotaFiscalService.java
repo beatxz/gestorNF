@@ -4,6 +4,7 @@ import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
 import com.dev.gestorNF.business.dto.out.NotaFiscalDTOResponse;
 import com.dev.gestorNF.business.mapper.NotaFiscalConverter;
 import com.dev.gestorNF.infrastructure.entity.out.NotaFiscalEntity;
+import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import com.dev.gestorNF.infrastructure.entity.out.VendedorEntity;
 import com.dev.gestorNF.infrastructure.exception.ConflictException;
 import com.dev.gestorNF.infrastructure.repository.NotaFiscalRepository;
@@ -27,9 +28,9 @@ public class NotaFiscalService {
     private final VendedorService vendedorService;
     private final NotaFiscalConverter notaFiscalConverter;
 
-    public void verificaNotaFiscalExiste(int numeroNotaFiscal) {
+    public void verificaNotaFiscalExiste(int numeroNotaFiscal,Long usuarioId) {
         try {
-            boolean existe = notaFiscalRepository.existsByNumeroNotaFiscal(numeroNotaFiscal);
+            boolean existe = notaFiscalRepository.existsByNumeroNotaFiscalAndVendedorUsuarioId(numeroNotaFiscal,usuarioId);
             if (existe) {
                 throw new ConflictException("Nota Fiscal já cadastrada");
             }
@@ -42,42 +43,53 @@ public class NotaFiscalService {
     public NotaFiscalDTOResponse cadastrarNotaFiscal(String token, NotaFiscalDTORequest notaFiscalDTORequest) {
 
         String email = jwtUtil.extrairEmailToken(token.substring(7));
-        usuarioRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
-        verificaNotaFiscalExiste(notaFiscalDTORequest.getNumeroNotaFiscal());
-        VendedorEntity vendedorEntity = vendedorRepository.findById(
-                notaFiscalDTORequest.getVendedorId()
-        ).orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
+
+        verificaNotaFiscalExiste(
+                notaFiscalDTORequest.getNumeroNotaFiscal(), usuarioEntity.getId());
+
+        VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(notaFiscalDTORequest.getVendedorId(), usuarioEntity.getId())
+                .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
+
         NotaFiscalEntity notaFiscalEntity = notaFiscalConverter.paraNotaFiscalEntity(notaFiscalDTORequest, vendedorEntity);
+
         return notaFiscalConverter.paraNotaFiscalDTOResponse(notaFiscalRepository.save(notaFiscalEntity));
     }
 
-    public void deletarNotaFiscal(int numeroNotaFiscal) {
-        notaFiscalRepository.deleteByNumeroNotaFiscal(numeroNotaFiscal);
+    public void deletarNotaFiscal(String token, int numeroNotaFiscal) {
+
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
+
+        NotaFiscalEntity notaFiscalEntity = notaFiscalRepository
+                        .findByNumeroNotaFiscalAndVendedorUsuarioId(numeroNotaFiscal, usuarioEntity.getId())
+                        .orElseThrow(() -> new RuntimeException("Nota fiscal não encontrada"));
+
+        notaFiscalRepository.delete(notaFiscalEntity);
     }
 
     public NotaFiscalDTOResponse buscarNotaFiscal(String token, int numeroNotaFiscal) {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
-        usuarioRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Email não encontrado " + email));
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
 
-        NotaFiscalEntity notaFiscalEntity =
-                notaFiscalRepository.findByNumeroNotaFiscal(numeroNotaFiscal)
-                        .orElseThrow(() ->
-                                new RuntimeException("Nota fiscal não encontrada"));
+        NotaFiscalEntity notaFiscalEntity = notaFiscalRepository.findByNumeroNotaFiscalAndVendedorUsuarioId(numeroNotaFiscal, usuarioEntity.getId())
+                        .orElseThrow(() -> new RuntimeException("Nota fiscal não encontrada"));
 
-        return notaFiscalConverter
-                .paraNotaFiscalDTOResponse(notaFiscalEntity);
+        return notaFiscalConverter.paraNotaFiscalDTOResponse(notaFiscalEntity);
     }
 
     public List<NotaFiscalDTOResponse> buscarNotasDoVendedor(String token, Long idVendedor) {
 
         String email = jwtUtil.extrairEmailToken(token.substring(7));
-        usuarioRepository.findByEmail(email)
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new RuntimeException("Email não encontrado " + email));
 
-        vendedorRepository.findById(idVendedor)
+        vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
                 .orElseThrow(() ->
                         new RuntimeException("Vendedor não encontrado " + idVendedor));
 
@@ -88,39 +100,32 @@ public class NotaFiscalService {
     }
 
     public Double valorTotalMensal(String token, Long idVendedor, YearMonth yearMonth) {
-        try {
+
             String email = jwtUtil.extrairEmailToken(token.substring(7));
-            usuarioRepository.findByEmail(email)
+            UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Email não encontrado " + token));
-            VendedorEntity vendedorEntity = vendedorRepository.findById(idVendedor)
+            VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
                     .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
-            Double total = vendedorEntity.getNotasFiscais()
+        return vendedorEntity.getNotasFiscais()
                     .stream()
                     .filter(nf -> YearMonth.from(nf.getDataVenda()).equals(yearMonth))
                     .mapToDouble(NotaFiscalEntity::getValorNotaFiscal)
                     .sum();
-            return total;
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Notas não encontradas");
-        }
     }
 
     public Double valorTotalComissao(String token, Long idVendedor, YearMonth yearMonth) {
-        try {
 
             String email = jwtUtil.extrairEmailToken(token.substring(7));
-            usuarioRepository.findByEmail(email)
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Email não encontrado " + token));
-            VendedorEntity vendedorEntity = vendedorRepository.findById(idVendedor)
+            VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
                     .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
             Double total = valorTotalMensal(token, idVendedor, yearMonth) * (vendedorEntity.getComissao() / 100);
 
             return total;
 
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Notas não encontradas");
         }
     }
-}
+
 
 

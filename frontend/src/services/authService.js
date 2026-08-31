@@ -31,9 +31,9 @@ export async function redefinirSenha({ token, novaSenha }) {
   return data
 }
 
-// Deletar usuário -> DELETE /usuario/{email}
+// Deletar usuário -> DELETE /usuario
 export async function deletarUsuario(email) {
-  const { data } = await api.delete(`/usuario/${encodeURIComponent(email)}`)
+  const { data } = await api.delete("/usuario")
   return data
 }
 
