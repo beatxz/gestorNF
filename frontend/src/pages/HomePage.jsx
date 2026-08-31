@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Settings, LogOut, UserRound, BadgePercent, Hash } from "lucide-react"
+import { Settings, LogOut, UserRound, BadgePercent, Hash , Download} from "lucide-react"
 import VendedorSidebar from "../components/VendedorSidebar.jsx"
 import FinanceCards from "../components/FinanceCards.jsx"
 import MonthPicker from "../components/MonthPicker.jsx"
@@ -22,6 +22,7 @@ import {
 } from "../services/notaService.js"
 import { getFriendlyError } from "../services/api.js"
 import { mesAtual } from "../utils/format.js"
+import ExportarRelatorioModal from "../components/modals/ExportarRelatorioModal.jsx"
 
 export default function HomePage() {
   const toast = useToast()
@@ -58,6 +59,7 @@ export default function HomePage() {
   const [modalNota, setModalNota] = useState(false)
   const [modalConfig, setModalConfig] = useState(false)
   const [notaDetalhe, setNotaDetalhe] = useState(null)
+  const [modalRelatorio, setModalRelatorio] = useState(false)
 
   const lista = buscaVendedor ? [buscaVendedor] : vendedores
 
@@ -254,18 +256,40 @@ export default function HomePage() {
             <div className="mx-auto flex max-w-5xl flex-col gap-6">
               {/* Cabeçalho do vendedor */}
               <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">{selecionado.nome}</h2>
+                  <h2 className="text-xl font-bold text-foreground">
+                    {selecionado.nome}
+                  </h2>
+
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Hash size={14} /> ID {selecionado.id}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <BadgePercent size={14} /> Comissão {selecionado.comissao}%
-                    </span>
+
+      <span className="flex items-center gap-1.5">
+        <Hash size={14} /> ID {selecionado.id}
+      </span>
+
+                    <span className="flex items-center gap-1.5"><BadgePercent size={14} /> Comissão {selecionado.comissao}%</span>
+
                   </div>
                 </div>
-                <MonthPicker value={mes} onChange={setMes} />
+
+                <div className="flex flex-wrap items-center gap-2">
+
+                  <MonthPicker
+                      value={mes}
+                      onChange={setMes}
+                  />
+
+                  <Button
+                      variant="outline"
+                      onClick={() => setModalRelatorio(true)}
+                  >
+                    <Download size={16} />
+                    Exportar PDF
+                  </Button>
+
+                </div>
+
               </div>
 
               {/* Cartões financeiros */}
@@ -315,6 +339,12 @@ export default function HomePage() {
         onClose={() => setModalConfig(false)}
         vendedores={vendedores}
         onVendedoresMudaram={aoMudarVendedores}
+      />
+      <ExportarRelatorioModal
+          open={modalRelatorio}
+          onClose={() => setModalRelatorio(false)}
+          vendedores={vendedores}
+          mes={mes}
       />
     </div>
   )
