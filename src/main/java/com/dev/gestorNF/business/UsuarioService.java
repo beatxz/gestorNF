@@ -6,6 +6,7 @@ import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
 import com.dev.gestorNF.business.mapper.UsuarioConverter;
 import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import com.dev.gestorNF.infrastructure.exception.ConflictException;
+import com.dev.gestorNF.infrastructure.exception.TooManyRequestsException;
 import com.dev.gestorNF.infrastructure.exception.UnauthorizedException;
 import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
 import com.dev.gestorNF.infrastructure.security.JwtUtil;
@@ -13,9 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -84,20 +83,52 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
     public void solicitarRecuperacaoSenha(String email){
-        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(()-> new RuntimeException("Usuario não encontrado"));
+
+        UsuarioEntity usuario =
+                usuarioRepository.findByEmail(email).orElse(null);
+
+        if (usuario == null) {
+            return;
+        }
+
+        LocalDateTime agora = LocalDateTime.now();
+
+        Integer tentativas = usuario.getTentativasRecuperacao();
+
+        if (tentativas == null) {
+            tentativas = 0;
+        }
+
+        if (usuario.getInicioJanelaRecuperacao() == null ||
+                usuario.getInicioJanelaRecuperacao().plusHours(1).isBefore(agora)) {
+            usuario.setInicioJanelaRecuperacao(agora);
+            usuario.setTentativasRecuperacao(0);
+
+            tentativas = 0;
+        }
+
+        if (tentativas >= 3) {
+            return;
+        }
 
         String token = UUID.randomUUID().toString();
 
         usuario.setTokenRecuperacaoSenha(token);
         usuario.setExpiracaoTokenRecuperacao(
-                LocalDateTime.now().plusMinutes(30));
-        usuarioRepository.save(usuario);
+                agora.plusMinutes(30)
+        );
 
+        usuario.setTentativasRecuperacao(
+                tentativas + 1
+        );
+
+        usuarioRepository.save(usuario);
         emailService.enviarEmailRecuperacaoSenha(
                 usuario.getEmail(),
                 usuario.getNome(),
-                token);
+                token
+        );
+
     }
     public void redefinirSenha(RedefinirSenhaDTORequest request) {
 
@@ -115,26 +146,66 @@ public class UsuarioService {
         usuario.setTokenRecuperacaoSenha(null);
         usuario.setExpiracaoTokenRecuperacao(null);
 
+        usuario.setTentativasLoginFalhas(0);
+        usuario.setBloqueadoAte(null);
+
+        usuario.setTentativasRecuperacao(0);
+        usuario.setInicioJanelaRecuperacao(null);
+
         usuarioRepository.save(usuario);
     }
 
     public String autenticarUsuario(UsuarioDTORequest usuarioDTORequest) {
-        try {
-            UsuarioEntity usuario = usuarioRepository.findByEmail(
-                    usuarioDTORequest.getEmail())
-                    .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado")
-            );
-            if (!usuario.isEmailVerificado()) {
-                throw new UnauthorizedException("Email ainda não foi verificado");
+        UsuarioEntity usuario = usuarioRepository
+                .findByEmail(usuarioDTORequest.getEmail())
+                .orElse(null);
+
+        if (usuario == null) {
+            throw new UnauthorizedException("Usuário ou senha inválidos");
+        }
+
+        LocalDateTime agora = LocalDateTime.now();
+
+        if (usuario.getBloqueadoAte() != null) {
+
+            if (usuario.getBloqueadoAte().isAfter(agora)) {
+                throw new TooManyRequestsException("Muitas tentativas de login. Tente novamente em alguns minutos.");
             }
 
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(usuarioDTORequest.getEmail(),
-                            usuarioDTORequest.getSenha())
+            usuario.setBloqueadoAte(null);
+            usuario.setTentativasLoginFalhas(0);
+            usuarioRepository.save(usuario);
+        }
+
+        try {
+
+            Authentication authentication =
+                    authenticationManager.authenticate(
+                            new UsernamePasswordAuthenticationToken(
+                                    usuarioDTORequest.getEmail(),
+                                    usuarioDTORequest.getSenha()
+                            )
+                    );
+
+            if (!usuario.isEmailVerificado()) {
+                throw new UnauthorizedException(
+                        "Email ainda não foi verificado"
+                );
+            }
+
+            usuario.setTentativasLoginFalhas(0);
+            usuario.setBloqueadoAte(null);
+
+            usuarioRepository.save(usuario);
+
+            return "Bearer " +
+                    jwtUtil.generateToken(authentication.getName());
+
+        } catch (BadCredentialsException e) {
+            registrarTentativaLoginFalha(usuario);
+            throw new UnauthorizedException(
+                    "Usuário ou senha inválidos"
             );
-            return "Bearer " + jwtUtil.generateToken(authentication.getName());
-        } catch (BadCredentialsException | UsernameNotFoundException | AuthorizationDeniedException e) {
-            throw new UnauthorizedException("Usuário ou senha invalidos ",e.getCause());
         }
     }
     public void deletarUsuario(String token) {
@@ -154,6 +225,27 @@ public class UsuarioService {
         } catch (RuntimeException e) {
             throw new RuntimeException("Usuario não encontrado");
         }
+    }
+    private void registrarTentativaLoginFalha(UsuarioEntity usuario) {
+
+        int tentativas =
+                usuario.getTentativasLoginFalhas() == null
+                        ? 0
+                        : usuario.getTentativasLoginFalhas();
+
+        tentativas++;
+
+        usuario.setTentativasLoginFalhas(tentativas);
+
+        if (tentativas >= 5) {
+            usuario.setBloqueadoAte(LocalDateTime.now().plusMinutes(15));
+
+            usuarioRepository.save(usuario);
+            throw new TooManyRequestsException(
+                    "Muitas tentativas de login. Tente novamente em 15 minutos.");
+        }
+
+        usuarioRepository.save(usuario);
     }
 
 }
