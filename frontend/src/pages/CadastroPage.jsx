@@ -6,6 +6,7 @@ import Button from "../components/ui/Button.jsx"
 import { cadastrarUsuario } from "../services/authService.js"
 import { getFriendlyError } from "../services/api.js"
 import { useToast } from "../hooks/useToast.jsx"
+import { validarSenhaForte } from "../utils/password.js"
 
 export default function CadastroPage() {
   const [nome, setNome] = useState("")
@@ -22,9 +23,18 @@ export default function CadastroPage() {
     if (!nome.trim()) novos.nome = "Informe seu nome."
     if (!email.trim()) novos.email = "Informe o e-mail."
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) novos.email = "E-mail inválido."
-    if (!senha) novos.senha = "Informe a senha."
-    else if (senha.length < 4) novos.senha = "A senha deve ter ao menos 4 caracteres."
+    if (!senha) {
+      novos.senha = "Informe a senha."
+    } else {
+      const erroSenha = validarSenhaForte(senha)
+
+      if (erroSenha) {
+        novos.senha = erroSenha
+      }
+    }
+
     setErros(novos)
+
     return Object.keys(novos).length === 0
   }
 
@@ -82,6 +92,11 @@ export default function CadastroPage() {
           error={erros.senha}
           autoComplete="new-password"
         />
+        <p className="text-xs text-muted-foreground">
+          Use pelo menos 8 caracteres, com letra maiúscula, minúscula,
+          número e caractere especial.
+        </p>
+
         <Button type="submit" size="lg" loading={carregando} className="mt-2 w-full">
           Cadastrar
         </Button>
