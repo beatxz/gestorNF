@@ -13,6 +13,8 @@ import { redefinirSenha } from "../services/authService.js"
 
 import { useToast } from "../hooks/useToast.jsx"
 
+import { validarSenhaForte } from "../utils/password.js"
+
 
 export default function RedefinirSenhaPage() {
 
@@ -48,8 +50,12 @@ export default function RedefinirSenhaPage() {
 
     if (!novaSenha) {
       novos.novaSenha = "Informe a nova senha."
-    } else if (novaSenha.length < 6) {
-      novos.novaSenha = "A senha deve ter pelo menos 6 caracteres."
+    } else {
+      const erroSenha = validarSenhaForte(novaSenha)
+
+      if (erroSenha) {
+        novos.novaSenha = erroSenha
+      }
     }
 
 

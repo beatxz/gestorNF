@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class UsuarioController {
     @ApiResponse(responseCode = "400", description = "usuário já cadastrado")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PostMapping
-    public ResponseEntity<UsuarioDTOResponse> salvarUsuario(@RequestBody UsuarioDTORequest usuarioDTORequest) {
+    public ResponseEntity<UsuarioDTOResponse> salvarUsuario(@Valid @RequestBody UsuarioDTORequest usuarioDTORequest) {
         return ResponseEntity.ok(usuarioService.salvarUsuario(usuarioDTORequest));
     }
     @Operation(summary = "Login usuário", description = "Faz o login do usuário")
@@ -72,7 +73,7 @@ public class UsuarioController {
     @ApiResponse(responseCode = "400", description = "Usuário não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PostMapping("/redefinir-senha")
-    public ResponseEntity<String> redefinirSenha(@RequestBody RedefinirSenhaDTORequest request) {
+    public ResponseEntity<String> redefinirSenha(@Valid @RequestBody RedefinirSenhaDTORequest request) {
         usuarioService.redefinirSenha(request);
         return ResponseEntity.ok("Senha redefinida com sucesso!");
     }
