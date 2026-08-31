@@ -93,4 +93,22 @@ public class NotaFiscalController {
                                                     @RequestParam("mes") YearMonth yearMonth){
         return ResponseEntity.ok(notaFiscalService.valorTotalComissao(token,idVendedor,yearMonth));
     }
+    @Operation(summary = "Relatório mensal", description = "Relatório mensal")
+    @ApiResponse(responseCode = "200" , description = "Relatório exportado com sucesso")
+    @ApiResponse(responseCode = "400", description = "Notas não encontradas")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+    @GetMapping("/relatorio")
+    public ResponseEntity<byte[]> gerarRelatorioMensal(@RequestHeader(name = "Authorization", required = false) String token,
+                                                       @RequestParam("mes") YearMonth mes,
+                                                       @RequestParam(value = "idVendedor", required = false) Long idVendedor) {
+
+        byte[] pdf =
+                notaFiscalService.gerarRelatorioMensal(token, mes, idVendedor);
+        String nomeArquivo = "relatorio-" + mes + ".pdf";
+
+        return ResponseEntity.ok().header(
+                "Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"" + nomeArquivo + "\"").body(pdf);
+    }
 }

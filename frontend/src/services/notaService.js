@@ -60,3 +60,17 @@ export async function buscarValorComissao(idVendedor, mes) {
   })
   return data
 }
+export async function exportarRelatorio(mes, idVendedor) {
+  const params = { mes }
+
+  if (idVendedor) {
+    params.idVendedor = idVendedor
+  }
+
+  const response = await api.get("/notaFiscal/relatorio", {
+    params,
+    responseType: "blob",
+  })
+
+  return response.data
+}
