@@ -148,59 +148,66 @@ function AbaDeletarVendedor({ vendedores, onSucesso }) {
 
 /* --- Deletar usuário --- */
 function AbaDeletarUsuario() {
-  const [email, setEmail] = useState("")
-  const [confirmando, setConfirmando] = useState(false)
-  const [excluindo, setExcluindo] = useState(false)
-  const toast = useToast()
-  const { sair } = useAuth()
+    const [confirmando, setConfirmando] = useState(false)
+    const [excluindo, setExcluindo] = useState(false)
+    const toast = useToast()
+    const { sair } = useAuth()
 
-  async function handleExcluir() {
-    setExcluindo(true)
-    try {
-      await deletarUsuario(email.trim())
-      toast.sucesso("Conta excluída. Você será redirecionado.")
-      setConfirmando(false)
-      setTimeout(() => sair(), 800)
-    } catch (error) {
-      toast.erro(getFriendlyError(error, "Não foi possível excluir o usuário."))
-      setExcluindo(false)
+    async function handleExcluir() {
+        setExcluindo(true)
+
+        try {
+            await deletarUsuario()
+
+            toast.sucesso("Conta excluída. Você será redirecionado.")
+
+            setConfirmando(false)
+
+            setTimeout(() => {
+                sair()
+            }, 800)
+
+        } catch (error) {
+            toast.erro(
+                getFriendlyError(
+                    error,
+                    "Não foi possível excluir o usuário."
+                )
+            )
+
+            setExcluindo(false)
+        }
     }
-  }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <Input
-        id="del-email"
-        label="E-mail da conta"
-        type="email"
-        placeholder="voce@empresa.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <div className="rounded-lg bg-[var(--color-destructive)]/10 p-3 text-sm text-[var(--color-destructive)]">
-        Esta ação é permanente e encerrará sua sessão.
-      </div>
-      <Button
-        variant="danger"
-        className="self-end"
-        disabled={!email.trim()}
-        onClick={() => setConfirmando(true)}
-      >
-        <Trash2 size={16} />
-        Deletar usuário
-      </Button>
+    return (
+        <div className="flex flex-col gap-4">
 
-      <ConfirmDialog
-        open={confirmando}
-        onClose={() => setConfirmando(false)}
-        onConfirm={handleExcluir}
-        title="Deletar usuário"
-        message="Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita."
-        confirmLabel="Deletar conta"
-        loading={excluindo}
-      />
-    </div>
-  )
+            <div className="rounded-lg bg-[var(--color-destructive)]/10 p-3 text-sm text-[var(--color-destructive)]">
+                Esta ação é permanente e encerrará sua sessão.
+                Todos os vendedores e notas fiscais da sua conta também serão excluídos.
+            </div>
+
+            <Button
+                variant="danger"
+                className="self-end"
+                onClick={() => setConfirmando(true)}
+            >
+                <Trash2 size={16} />
+                Deletar usuário
+            </Button>
+
+            <ConfirmDialog
+                open={confirmando}
+                onClose={() => setConfirmando(false)}
+                onConfirm={handleExcluir}
+                title="Deletar usuário"
+                message="Tem certeza que deseja excluir sua conta? Todos os vendedores e notas fiscais serão excluídos permanentemente. Esta ação não pode ser desfeita."
+                confirmLabel="Deletar conta"
+                loading={excluindo}
+            />
+
+        </div>
+    )
 }
 
 /* --- Seletor de vendedor reutilizável --- */

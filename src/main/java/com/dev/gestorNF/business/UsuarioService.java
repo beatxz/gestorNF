@@ -137,9 +137,15 @@ public class UsuarioService {
             throw new UnauthorizedException("Usuário ou senha invalidos ",e.getCause());
         }
     }
-    public void deletaUsuarioEmail(String email){
-        usuarioRepository.deleteByEmail(email);
+    public void deletarUsuario(String token) {
+
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        usuarioRepository.delete(usuarioEntity);
     }
+
     public UsuarioDTOResponse buscaUsuarioEmail(String email) {
         try {
            return usuarioConverter.paraUsuarioDTOResponse
