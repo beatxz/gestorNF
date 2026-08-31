@@ -8,6 +8,8 @@ import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import com.dev.gestorNF.infrastructure.entity.out.VendedorEntity;
 import com.dev.gestorNF.infrastructure.exception.ConflictException;
 import com.dev.gestorNF.infrastructure.repository.NotaFiscalRepository;
+import com.dev.gestorNF.business.dto.in.ClienteDTORequest;
+import com.dev.gestorNF.business.dto.out.ClienteDTOResponse;
 import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
 import com.dev.gestorNF.infrastructure.repository.VendedorRepository;
 import com.dev.gestorNF.infrastructure.security.JwtUtil;
@@ -36,6 +38,7 @@ public class NotaFiscalService {
     private final VendedorRepository vendedorRepository;
     private final VendedorService vendedorService;
     private final NotaFiscalConverter notaFiscalConverter;
+    private final ClienteService clienteService;
 
     public void verificaNotaFiscalExiste(int numeroNotaFiscal,Long usuarioId) {
         try {
@@ -47,6 +50,31 @@ public class NotaFiscalService {
         } catch (ConflictException e) {
             throw new ConflictException("Nota Fiscal já cadastrada");
         }
+    }
+    private String resolverNomeEmpresa(String token, Long idVendedor, String codigoCliente, String nomeEmpresaDigitado) {
+
+        if (codigoCliente == null || codigoCliente.isBlank()) {
+            return nomeEmpresaDigitado;
+        }
+
+        ClienteDTOResponse clienteExistente = clienteService.buscarPorCodigo(token, idVendedor, codigoCliente);
+
+        if (clienteExistente != null) {
+            return clienteExistente.getNomeEmpresa();
+        }
+
+        if (nomeEmpresaDigitado == null || nomeEmpresaDigitado.isBlank()) {
+            throw new RuntimeException("Informe o nome da empresa para cadastrar um novo código de cliente");
+        }
+
+        ClienteDTORequest novoCliente = ClienteDTORequest.builder()
+                .codigoCliente(codigoCliente)
+                .nomeEmpresa(nomeEmpresaDigitado)
+                .build();
+
+        ClienteDTOResponse clienteCriado = clienteService.cadastrarCliente(token, idVendedor, novoCliente);
+
+        return clienteCriado.getNomeEmpresa();
     }
 
     public NotaFiscalDTOResponse cadastrarNotaFiscal(String token, NotaFiscalDTORequest notaFiscalDTORequest) {
@@ -61,7 +89,10 @@ public class NotaFiscalService {
         VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(notaFiscalDTORequest.getVendedorId(), usuarioEntity.getId())
                 .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
 
-        NotaFiscalEntity notaFiscalEntity = notaFiscalConverter.paraNotaFiscalEntity(notaFiscalDTORequest, vendedorEntity);
+        String nomeEmpresaResolvido = resolverNomeEmpresa(
+                token, notaFiscalDTORequest.getVendedorId(), notaFiscalDTORequest.getCodigoCliente(), notaFiscalDTORequest.getNomeEmpresa());
+
+        NotaFiscalEntity notaFiscalEntity = notaFiscalConverter.paraNotaFiscalEntity(notaFiscalDTORequest, vendedorEntity, nomeEmpresaResolvido);
 
         return notaFiscalConverter.paraNotaFiscalDTOResponse(notaFiscalRepository.save(notaFiscalEntity));
     }
