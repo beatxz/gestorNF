@@ -98,11 +98,6 @@ public class EmailService {
                     context
             );
 
-            System.out.println(template);
-            System.out.println(
-                    "LINK RECUPERACAO: " + urlRecuperacao + "?token=" + token
-            );
-
             CreateEmailOptions emailRequest =
                     CreateEmailOptions.builder()
                             .from(nomeRemetente + " <" + remetente + ">")

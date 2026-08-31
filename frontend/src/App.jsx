@@ -7,6 +7,7 @@ import CadastroPage from "./pages/CadastroPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import RedefinirSenhaPage from "./pages/RedefinirSenhaPage.jsx";
 import EsqueciSenhaPage from "./pages/EsqueciSenhaPage.jsx";
+import ClientesPage from "./pages/ClientesPage.jsx";
 
 function RotaProtegida({ children }) {
   const { autenticado } = useAuth();
@@ -42,6 +43,14 @@ export default function App() {
       {/* Recuperação de senha */}
       <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
 
+        <Route
+            path="/clientes"
+            element={
+                <RotaProtegida>
+                    <ClientesPage />
+                </RotaProtegida>
+            }
+        />
       <Route
         path="/"
         element={

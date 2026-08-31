@@ -13,10 +13,10 @@ public class NotaFiscalConverter {
 
     private final VendedorConverter vendedorConverter;
 
-    public NotaFiscalEntity paraNotaFiscalEntity(NotaFiscalDTORequest notaFiscalDTORequest,VendedorEntity vendedorEntity){
+    public NotaFiscalEntity paraNotaFiscalEntity(NotaFiscalDTORequest notaFiscalDTORequest, VendedorEntity vendedorEntity, String nomeEmpresaResolvido){
         return NotaFiscalEntity.builder()
                 .numeroNotaFiscal(notaFiscalDTORequest.getNumeroNotaFiscal())
-                .nomeEmpresa(notaFiscalDTORequest.getNomeEmpresa())
+                .nomeEmpresa(nomeEmpresaResolvido)
                 .valorNotaFiscal(notaFiscalDTORequest.getValorNotaFiscal())
                 .dataVenda(notaFiscalDTORequest.getDataVenda())
                 .vendedor(vendedorEntity)
