@@ -22,5 +22,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex){
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<String> handleTooManyRequests(
+            TooManyRequestsException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ex.getMessage());
+    }
 
 }
