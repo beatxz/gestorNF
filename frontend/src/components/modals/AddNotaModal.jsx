@@ -6,6 +6,7 @@ import { cadastrarNota } from "../../services/notaService.js"
 import { getFriendlyError } from "../../services/api.js"
 import { dataInputParaBackend } from "../../utils/format.js"
 import { useToast } from "../../hooks/useToast.jsx"
+import { buscarClientePorCodigo } from "../../services/clienteService.js"
 
 /**
  * Modal para adicionar uma nota fiscal.
@@ -14,6 +15,9 @@ import { useToast } from "../../hooks/useToast.jsx"
 export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
   const [numero, setNumero] = useState("")
   const [empresa, setEmpresa] = useState("")
+  const [codigoCliente, setCodigoCliente] = useState("")
+  const [clienteEncontrado, setClienteEncontrado] = useState(false)
+  const [buscandoCliente, setBuscandoCliente] = useState(false)
   const [valor, setValor] = useState("")
   const [data, setData] = useState("")
   const [erros, setErros] = useState({})
@@ -23,6 +27,8 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
   function limpar() {
     setNumero("")
     setEmpresa("")
+    setCodigoCliente("")
+    setClienteEncontrado(false)
     setValor("")
     setData("")
     setErros({})
@@ -31,6 +37,30 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
   function fechar() {
     limpar()
     onClose()
+  }
+  function handleChangeCodigo(e) {
+    setCodigoCliente(e.target.value)
+    setClienteEncontrado(false)
+  }
+
+  async function handleBlurCodigo() {
+    const codigo = codigoCliente.trim()
+    if (!codigo || !vendedor) return
+
+    setBuscandoCliente(true)
+    try {
+      const cliente = await buscarClientePorCodigo(vendedor.id, codigo)
+      if (cliente) {
+        setEmpresa(cliente.nomeEmpresa)
+        setClienteEncontrado(true)
+      } else {
+        setClienteEncontrado(false)
+      }
+    } catch (error) {
+      toast.erro(getFriendlyError(error, "Não foi possível buscar o cliente."))
+    } finally {
+      setBuscandoCliente(false)
+    }
   }
 
   function validar() {
@@ -52,6 +82,7 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
         vendedorId: vendedor.id,
         numeroNotaFiscal: numero,
         nomeEmpresa: empresa.trim(),
+        codigoCliente: codigoCliente.trim() || null,
         valorNotaFiscal: valor,
         dataVenda: dataInputParaBackend(data),
       })
@@ -90,21 +121,46 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
           </div>
         </div>
         <Input
-          id="n-numero"
-          label="Número da nota"
-          type="number"
-          placeholder="Ex: 13678"
-          value={numero}
-          onChange={(e) => setNumero(e.target.value)}
-          error={erros.numero}
+            id="n-numero"
+            label="Número da nota"
+            type="number"
+            placeholder="Ex: 13678"
+            value={numero}
+            onChange={(e) => setNumero(e.target.value)}
+            error={erros.numero}
         />
+        <div className="flex flex-col gap-1.5">
+          <Input
+              id="n-codigo-cliente"
+              label="Código do cliente (opcional)"
+              placeholder="Ex: 123"
+              value={codigoCliente}
+              onChange={handleChangeCodigo}
+              onBlur={handleBlurCodigo}
+          />
+          {buscandoCliente && (
+              <span className="text-xs text-muted-foreground">Buscando cliente...</span>
+          )}
+          {!buscandoCliente && clienteEncontrado && (
+              <span className="text-xs text-[var(--color-success)]">
+              Cliente encontrado: nome preenchido automaticamente.
+            </span>
+          )}
+          {!buscandoCliente && codigoCliente.trim() && !clienteEncontrado && (
+              <span className="text-xs text-muted-foreground">
+              Código novo — informe o nome da empresa abaixo para cadastrá-lo.
+            </span>
+          )}
+        </div>
         <Input
-          id="n-empresa"
-          label="Nome da empresa"
-          placeholder="Ex: Casa do Pneu"
-          value={empresa}
-          onChange={(e) => setEmpresa(e.target.value)}
-          error={erros.empresa}
+            id="n-empresa"
+            label="Nome da empresa"
+            placeholder="Ex: Casa do Pneu"
+            value={empresa}
+            onChange={(e) => setEmpresa(e.target.value)}
+            error={erros.empresa}
+            readOnly={clienteEncontrado}
+            className={clienteEncontrado ? "cursor-not-allowed bg-muted" : ""}
         />
         <Input
           id="n-valor"

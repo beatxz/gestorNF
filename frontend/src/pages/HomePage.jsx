@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Settings, LogOut, UserRound, BadgePercent, Hash , Download} from "lucide-react"
+import { Settings, LogOut, UserRound, BadgePercent, Hash, Download, Users } from "lucide-react"
 import VendedorSidebar from "../components/VendedorSidebar.jsx"
 import FinanceCards from "../components/FinanceCards.jsx"
 import MonthPicker from "../components/MonthPicker.jsx"
@@ -23,10 +23,12 @@ import {
 import { getFriendlyError } from "../services/api.js"
 import { mesAtual } from "../utils/format.js"
 import ExportarRelatorioModal from "../components/modals/ExportarRelatorioModal.jsx"
+import { useNavigate } from "react-router-dom"
 
 export default function HomePage() {
   const toast = useToast()
   const { sair } = useAuth()
+  const navigate = useNavigate()
 
   // Evita recriar o callback de erro a cada render (usado pelo hook).
   const toastRef = useRef(toast)
@@ -228,7 +230,15 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setModalConfig(true)}
+                onClick={() => navigate("/clientes")}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Clientes"
+                title="Clientes"
+            >
+              <Users size={18} />
+            </button>
+            <button
+                onClick={() => setModalConfig(true)}
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label="Configurações"
               title="Configurações"

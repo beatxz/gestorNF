@@ -17,6 +17,7 @@ public class NotaFiscalDTORequest {
     private int numeroNotaFiscal;
     private String nomeEmpresa;
     private double valorNotaFiscal;
+    private String codigoCliente;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern= "dd-MM-yyyy")
     private LocalDate dataVenda;
 }
