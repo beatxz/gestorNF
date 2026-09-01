@@ -10,26 +10,44 @@ import { formatarMoeda, formatarData } from "../utils/format.js"
  * Ao clicar em uma linha, abre os detalhes/ações da nota.
  */
 export default function NotasTable({
-  notas,
-  carregando,
-  onAdicionar,
-  onSelecionarNota,
-  onBuscarNumero,
-  buscando,
-  buscaAtiva,
-  onLimparBusca,
-}) {
+                                     notas,
+                                     carregando,
+                                     onAdicionar,
+                                     onSelecionarNota,
+                                     onBuscarNumero,
+                                     onBuscarCodigo,
+                                     buscando,
+                                     buscaAtiva,
+                                     buscaCodigoAtiva,
+                                     onLimparBusca,
+                                     onLimparBuscaCodigo,
+                                   }) {
   const [numero, setNumero] = useState("")
+  const [codigoCliente, setCodigoCliente] = useState("")
 
   function handleBusca(e) {
     e.preventDefault()
     const n = numero.trim()
     if (n) onBuscarNumero(n)
   }
+  function handleBuscaCodigo(e) {
+    e.preventDefault()
+
+    const codigo = codigoCliente.trim()
+
+    if (codigo) {
+      onBuscarCodigo(codigo)
+    }
+  }
 
   function limpar() {
     setNumero("")
     onLimparBusca()
+  }
+
+  function limparCodigo() {
+    setCodigoCliente("")
+    onLimparBuscaCodigo()
   }
 
   return (
@@ -58,6 +76,31 @@ export default function NotasTable({
               </button>
             )}
           </form>
+          <form onSubmit={handleBuscaCodigo} className="relative">
+            <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+
+            <input
+                type="text"
+                value={codigoCliente}
+                onChange={(e) => setCodigoCliente(e.target.value)}
+                placeholder="Buscar por cód. cliente"
+                className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-9 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/20 sm:w-56"
+            />
+
+            {(codigoCliente || buscaCodigoAtiva) && (
+                <button
+                    type="button"
+                    onClick={limparCodigo}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Limpar busca por cliente"
+                >
+                  <X size={16} />
+                </button>
+            )}
+          </form>
           <Button onClick={onAdicionar} size="md">
             <Plus size={16} />
             Adicionar nota
@@ -82,6 +125,7 @@ export default function NotasTable({
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-5 py-3 font-medium">Nº Nota</th>
+                <th className="px-5 py-3 font-medium">Cód. Cliente</th>
                 <th className="px-5 py-3 font-medium">Empresa</th>
                 <th className="px-5 py-3 font-medium">Valor</th>
                 <th className="px-5 py-3 font-medium">Data</th>
@@ -95,6 +139,7 @@ export default function NotasTable({
                   className="cursor-pointer border-b border-border last:border-0 transition-colors hover:bg-muted"
                 >
                   <td className="px-5 py-3.5 font-medium text-foreground">{nota.numeroNotaFiscal}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground">{nota.codigoCliente || "-"}</td>
                   <td className="px-5 py-3.5 text-foreground">{nota.nomeEmpresa}</td>
                   <td className="px-5 py-3.5 font-medium text-foreground">{formatarMoeda(nota.valorNotaFiscal)}</td>
                   <td className="px-5 py-3.5 text-muted-foreground">{formatarData(nota.dataVenda)}</td>

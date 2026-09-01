@@ -3,6 +3,8 @@ package com.dev.gestorNF.controller;
 import com.dev.gestorNF.business.ClienteService;
 import com.dev.gestorNF.business.dto.in.ClienteDTORequest;
 import com.dev.gestorNF.business.dto.out.ClienteDTOResponse;
+import com.dev.gestorNF.infrastructure.security.SecurityConfig;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/cliente/vendedor/{idVendedor}")
 @RequiredArgsConstructor
+@SecurityRequirement(name = SecurityConfig.SECURITY_SCHEME)
 public class ClienteController {
 
     private final ClienteService clienteService;

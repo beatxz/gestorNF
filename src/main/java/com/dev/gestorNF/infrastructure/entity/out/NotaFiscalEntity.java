@@ -28,9 +28,15 @@ public class NotaFiscalEntity {
     @Column(name= "dataVenda")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern= "dd-MM-yyyy")
     private LocalDate dataVenda;
+    @Column(name = "codigo_cliente", length = 30)
+    private String codigoCliente;
 
     @ManyToOne
     @JoinColumn(name = "vendedor_id")
     private VendedorEntity vendedor;
+
+    @ManyToOne
+    @JoinColumn(name = "cliente_id")
+    private ClienteEntity cliente;
 
 }

@@ -48,6 +48,7 @@ export default function HomePage() {
   const [notas, setNotas] = useState([])
   const [carregandoNotas, setCarregandoNotas] = useState(false)
   const [buscaNota, setBuscaNota] = useState(null)
+  const [buscaCodigoCliente, setBuscaCodigoCliente] = useState(null)
   const [buscandoNota, setBuscandoNota] = useState(false)
 
   // Valores financeiros
@@ -174,6 +175,30 @@ export default function HomePage() {
     setBuscaNota(null)
   }
 
+  function handleBuscarCodigoCliente(codigo) {
+    if (!codigo) return
+
+    const codigoNormalizado = codigo.trim().toLowerCase()
+
+    const encontradas = notas.filter(
+        (nota) =>
+            String(nota.codigoCliente ?? "")
+                .trim()
+                .toLowerCase() === codigoNormalizado
+    )
+
+    setBuscaNota(null)
+    setBuscaCodigoCliente(encontradas)
+
+    if (encontradas.length === 0) {
+      toast.info("Nenhuma nota encontrada para esse código de cliente.")
+    }
+  }
+
+  function limparBuscaCodigoCliente() {
+    setBuscaCodigoCliente(null)
+  }
+
   // Atualiza tudo após cadastrar/excluir nota.
   function recarregarNotas() {
     setModalNota(false)
@@ -205,7 +230,19 @@ export default function HomePage() {
     }
   }
 
-  const notasExibidas = buscaNota ?? notas
+  const notasDoMes = notas.filter((nota) => {
+    if (!nota.dataVenda) return false
+
+    const [, mesNota, anoNota] = nota.dataVenda.split("-")
+    const [anoSelecionado, mesSelecionado] = mes.split("-")
+
+    return mesNota === mesSelecionado && anoNota === anoSelecionado
+  })
+
+  const notasExibidas =
+      buscaNota ??
+      buscaCodigoCliente ??
+      notasDoMes
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -311,14 +348,17 @@ export default function HomePage() {
 
               {/* Tabela de notas */}
               <NotasTable
-                notas={notasExibidas}
-                carregando={carregandoNotas}
-                onAdicionar={() => setModalNota(true)}
-                onSelecionarNota={(n) => setNotaDetalhe(n)}
-                onBuscarNumero={handleBuscarNota}
-                buscando={buscandoNota}
-                buscaAtiva={Boolean(buscaNota)}
-                onLimparBusca={limparBuscaNota}
+                  notas={notasExibidas}
+                  carregando={carregandoNotas}
+                  onAdicionar={() => setModalNota(true)}
+                  onSelecionarNota={(n) => setNotaDetalhe(n)}
+                  onBuscarNumero={handleBuscarNota}
+                  onBuscarCodigo={handleBuscarCodigoCliente}
+                  buscando={buscandoNota}
+                  buscaAtiva={Boolean(buscaNota)}
+                  buscaCodigoAtiva={buscaCodigoCliente !== null}
+                  onLimparBusca={limparBuscaNota}
+                  onLimparBuscaCodigo={limparBuscaCodigoCliente}
               />
             </div>
           )}
