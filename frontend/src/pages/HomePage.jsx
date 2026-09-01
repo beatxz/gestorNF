@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import {Settings, LogOut, UserRound, BadgePercent, Hash, Download, Users, ChartNoAxesCombined,} from "lucide-react"
+import {Settings, LogOut, UserRound, BadgePercent, Hash, Download, Users, ChartNoAxesCombined,Menu} from "lucide-react"
 import VendedorSidebar from "../components/VendedorSidebar.jsx"
 import FinanceCards from "../components/FinanceCards.jsx"
 import MonthPicker from "../components/MonthPicker.jsx"
@@ -40,6 +40,7 @@ export default function HomePage() {
 
   // Vendedor selecionado
   const [selecionado, setSelecionado] = useState(null)
+  const [sidebarAberta, setSidebarAberta] = useState(false)
 
   // Busca de vendedor por ID
   const [buscaVendedor, setBuscaVendedor] = useState(null) // vendedor encontrado
@@ -171,23 +172,49 @@ export default function HomePage() {
     setBuscaVendedor(null)
   }
 
-  // Busca de nota por número (dentro do vendedor selecionado).
-  async function handleBuscarNota(numero) {
-    if (!selecionado) return
-    setBuscandoNota(true)
+
+  async function handleBuscarNotaGlobal(numero) {
+    if (!numero) return
+
     try {
       const nota = await buscarNota(numero)
-      if (nota && nota.numeroNotaFiscal != null) {
-        setBuscaNota([nota])
-      } else {
-        setBuscaNota([])
-        toast.info("Nenhuma nota encontrada com esse número.")
+
+      const idVendedorNota = nota?.vendedor?.id
+
+      if (!idVendedorNota) {
+        toast.erro("Não foi possível identificar o vendedor desta nota.")
+        return
       }
+
+      const vendedorDaNota = vendedores.find(
+          (vendedor) =>
+              Number(vendedor.id) === Number(idVendedorNota),
+      )
+
+      if (!vendedorDaNota) {
+        toast.erro("O vendedor responsável pela nota não foi encontrado.")
+        return
+      }
+
+      // muda automaticamente para o vendedor verdadeiro
+      await selecionarVendedor(vendedorDaNota)
+
+      // mostra somente a NF encontrada
+      setBuscaNota([nota])
+
+      // limpa eventual busca anterior por cliente
+      setBuscaCodigoCliente(null)
+
+      toast.sucesso(
+          `NF encontrada com ${vendedorDaNota.nome}.`,
+      )
     } catch (error) {
-      setBuscaNota([])
-      toast.erro(getFriendlyError(error, "Nota não encontrada."))
-    } finally {
-      setBuscandoNota(false)
+      toast.erro(
+          getFriendlyError(
+              error,
+              "Nota fiscal não encontrada.",
+          ),
+      )
     }
   }
 
@@ -282,15 +309,24 @@ export default function HomePage() {
         selecionado={selecionado}
         onSelecionar={selecionarVendedor}
         onAdicionar={() => setModalVendedor(true)}
-        onBuscarId={handleBuscarVendedorId}
         buscando={buscandoVendedor}
-        buscaAtiva={Boolean(buscaVendedor)}
+        onBuscarNotaGlobal={handleBuscarNotaGlobal}
         onLimparBusca={limparBuscaVendedor}
+        aberta={sidebarAberta}
+        onFechar={() => setSidebarAberta(false)}
       />
 
       <main className="flex flex-1 flex-col overflow-hidden">
         {/* Barra superior */}
         <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+          <button
+              type="button"
+              onClick={() => setSidebarAberta(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+              aria-label="Abrir menu lateral"
+          >
+            <Menu size={20} />
+          </button>
           <div>
             <h1 className="text-lg font-semibold text-foreground">Painel de gestão</h1>
             <p className="text-sm text-muted-foreground">Vendedores e notas fiscais</p>
@@ -394,12 +430,8 @@ export default function HomePage() {
                   carregando={carregandoNotas}
                   onAdicionar={() => setModalNota(true)}
                   onSelecionarNota={(n) => setNotaDetalhe(n)}
-                  onBuscarNumero={handleBuscarNota}
                   onBuscarCodigo={handleBuscarCodigoCliente}
-                  buscando={buscandoNota}
-                  buscaAtiva={Boolean(buscaNota)}
                   buscaCodigoAtiva={buscaCodigoCliente !== null}
-                  onLimparBusca={limparBuscaNota}
                   onLimparBuscaCodigo={limparBuscaCodigoCliente}
               />
             </div>

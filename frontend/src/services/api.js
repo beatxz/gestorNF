@@ -74,7 +74,7 @@ export function getFriendlyError(error, fallback = "Algo deu errado. Tente novam
     if (data?.message) return data.message
     if (data?.error) return data.error
     if (error.response.status === 429)return "Muitas tentativas. Aguarde alguns minutos e tente novamente."
-      if (error.response.status === 403)return "Recurso não encontrado."
+      if (error.response.status === 403)return "Você não tem permissão para realizar esta operação."
     if (error.response.status === 404) return "Registro não encontrado."
     if (error.response.status === 409) return "Este registro já existe."
     return fallback

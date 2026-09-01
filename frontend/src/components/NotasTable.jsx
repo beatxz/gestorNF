@@ -14,22 +14,12 @@ export default function NotasTable({
                                      carregando,
                                      onAdicionar,
                                      onSelecionarNota,
-                                     onBuscarNumero,
                                      onBuscarCodigo,
-                                     buscando,
-                                     buscaAtiva,
                                      buscaCodigoAtiva,
-                                     onLimparBusca,
                                      onLimparBuscaCodigo,
                                    }) {
-  const [numero, setNumero] = useState("")
   const [codigoCliente, setCodigoCliente] = useState("")
 
-  function handleBusca(e) {
-    e.preventDefault()
-    const n = numero.trim()
-    if (n) onBuscarNumero(n)
-  }
   function handleBuscaCodigo(e) {
     e.preventDefault()
 
@@ -40,10 +30,6 @@ export default function NotasTable({
     }
   }
 
-  function limpar() {
-    setNumero("")
-    onLimparBusca()
-  }
 
   function limparCodigo() {
     setCodigoCliente("")
@@ -56,26 +42,6 @@ export default function NotasTable({
       <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-base font-semibold text-foreground">Notas fiscais</h3>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <form onSubmit={handleBusca} className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="number"
-              value={numero}
-              onChange={(e) => setNumero(e.target.value)}
-              placeholder="Buscar nota por número"
-              className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-9 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/20 sm:w-56"
-            />
-            {(numero || buscaAtiva) && (
-              <button
-                type="button"
-                onClick={limpar}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label="Limpar busca"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </form>
           <form onSubmit={handleBuscaCodigo} className="relative">
             <Search
                 size={16}
@@ -109,16 +75,20 @@ export default function NotasTable({
       </div>
 
       {/* Conteúdo */}
-      {carregando || buscando ? (
+      {carregando  ? (
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
       ) : notas.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          titulo="Nenhuma nota fiscal"
-          descricao={buscaAtiva ? "Nenhuma nota encontrada com esse número." : "Adicione a primeira nota deste vendedor."}
-        />
+          <EmptyState
+              icon={FileText}
+              titulo="Nenhuma nota fiscal"
+              descricao={
+                  buscaCodigoAtiva
+                      ? "Nenhuma nota encontrada para esse código de cliente."
+                      : "Adicione a primeira nota deste vendedor."
+              }
+          />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
