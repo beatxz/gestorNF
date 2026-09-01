@@ -77,3 +77,18 @@ export async function exportarRelatorio(mes, idVendedor) {
 
   return response.data
 }
+export async function buscarResultadoGeral(mes) {
+  const { data } = await api.get("/notaFiscal/resultado-geral", {
+    params: { mes },
+  })
+
+  return data
+}
+export async function exportarResultadoGeralPdf(mes) {
+  const response = await api.get("/notaFiscal/resultado-geral/pdf", {
+    params: { mes },
+    responseType: "blob",
+  })
+
+  return response.data
+}

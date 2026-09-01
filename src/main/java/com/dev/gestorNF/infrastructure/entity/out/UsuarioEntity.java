@@ -28,6 +28,9 @@ public class UsuarioEntity {
     @Column(name = "senha", nullable = false)
     private String senha;
 
+    @Column(name = "comissao_total")
+    private Double comissaoTotal;
+
     @Column(name = "emailVerificado")
     private boolean emailVerificado;
 

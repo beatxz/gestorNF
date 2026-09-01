@@ -36,6 +36,26 @@ export async function deletarUsuario(email) {
   const { data } = await api.delete("/usuario")
   return data
 }
+// Busca os dados do usuário logado
+export async function buscarUsuarioLogado() {
+  const { data } = await api.get("/usuario/me")
+  return data
+}
+
+// Altera a comissão total da empresa
+export async function alterarComissaoTotal(comissaoTotal) {
+  const { data } = await api.patch(
+      "/usuario/comissao-total",
+      Number(comissaoTotal),
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+  )
+
+  return data
+}
 
 export function logout() {
   clearToken()

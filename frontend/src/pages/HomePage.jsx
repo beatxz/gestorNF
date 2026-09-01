@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Settings, LogOut, UserRound, BadgePercent, Hash, Download, Users } from "lucide-react"
+import {Settings, LogOut, UserRound, BadgePercent, Hash, Download, Users, ChartNoAxesCombined,} from "lucide-react"
 import VendedorSidebar from "../components/VendedorSidebar.jsx"
 import FinanceCards from "../components/FinanceCards.jsx"
 import MonthPicker from "../components/MonthPicker.jsx"
@@ -14,6 +14,7 @@ import { useVendedores } from "../hooks/useVendedores.js"
 import { useAuth } from "../hooks/useAuth.jsx"
 import { useToast } from "../hooks/useToast.jsx"
 import { buscarVendedorPorId } from "../services/vendedorService.js"
+import { buscarUsuarioLogado } from "../services/authService.js"
 import {
   listarNotasDoVendedor,
   buscarNota,
@@ -55,6 +56,7 @@ export default function HomePage() {
   const [mes, setMes] = useState(mesAtual())
   const [valorMensal, setValorMensal] = useState(null)
   const [valorComissao, setValorComissao] = useState(null)
+  const [comissaoTotal, setComissaoTotal] = useState(null)
   const [carregandoValores, setCarregandoValores] = useState(false)
 
   // Modais
@@ -102,6 +104,24 @@ export default function HomePage() {
     } finally {
       setCarregandoValores(false)
     }
+  }, [])
+
+  useEffect(() => {
+    async function carregarUsuario() {
+      try {
+        const usuario = await buscarUsuarioLogado()
+        setComissaoTotal(usuario?.comissaoTotal ?? null)
+      } catch (error) {
+        toastRef.current.erro(
+            getFriendlyError(
+                error,
+                "Não foi possível carregar a comissão total da empresa.",
+            ),
+        )
+      }
+    }
+
+    carregarUsuario()
   }, [])
 
   // Ao selecionar um vendedor, busca notas e valores.
@@ -230,6 +250,16 @@ export default function HomePage() {
     }
   }
 
+  const percentualUsuario =
+      comissaoTotal != null && selecionado?.comissao != null
+          ? Math.max(0, Number(comissaoTotal) - Number(selecionado.comissao))
+          : null
+
+  const valorComissaoUsuario =
+      valorMensal != null && percentualUsuario != null
+          ? Number(valorMensal) * (percentualUsuario / 100)
+          : null
+
   const notasDoMes = notas.filter((nota) => {
     if (!nota.dataVenda) return false
 
@@ -272,7 +302,16 @@ export default function HomePage() {
                 aria-label="Clientes"
                 title="Clientes"
             >
+
               <Users size={18} />
+            </button>
+            <button
+                onClick={() => navigate("/resultado-geral")}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Resultado geral"
+                title="Resultado geral"
+            >
+              <ChartNoAxesCombined size={18} />
             </button>
             <button
                 onClick={() => setModalConfig(true)}
@@ -341,9 +380,12 @@ export default function HomePage() {
 
               {/* Cartões financeiros */}
               <FinanceCards
-                valorMensal={valorMensal}
-                valorComissao={valorComissao}
-                carregando={carregandoValores}
+                  valorMensal={valorMensal}
+                  valorComissao={valorComissao}
+                  valorComissaoUsuario={valorComissaoUsuario}
+                  percentualVendedor={selecionado.comissao}
+                  percentualUsuario={percentualUsuario}
+                  carregando={carregandoValores}
               />
 
               {/* Tabela de notas */}

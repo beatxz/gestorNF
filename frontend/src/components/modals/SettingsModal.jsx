@@ -1,11 +1,11 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Percent, UserMinus, Trash2 } from "lucide-react"
 import Modal from "../ui/Modal.jsx"
 import Input from "../ui/Input.jsx"
 import Button from "../ui/Button.jsx"
 import ConfirmDialog from "../ui/ConfirmDialog.jsx"
 import { alterarComissao, deletarVendedor } from "../../services/vendedorService.js"
-import { deletarUsuario } from "../../services/authService.js"
+import {deletarUsuario, buscarUsuarioLogado, alterarComissaoTotal,} from "../../services/authService.js"
 import { getFriendlyError } from "../../services/api.js"
 import { useToast } from "../../hooks/useToast.jsx"
 import { useAuth } from "../../hooks/useAuth.jsx"
@@ -15,10 +15,11 @@ import { useAuth } from "../../hooks/useAuth.jsx"
  * Abas: Alterar comissão, Deletar vendedor, Deletar usuário.
  */
 export default function SettingsModal({ open, onClose, vendedores, onVendedoresMudaram }) {
-  const [aba, setAba] = useState("comissao")
+  const [aba, setAba] = useState("comissaoGeral")
 
   const abas = [
-    { id: "comissao", rotulo: "Alterar comissão", icon: Percent },
+      { id: "comissaoGeral", rotulo: "Comissão geral", icon: Percent },
+      { id: "comissao", rotulo: "Comissão vendedor", icon: Percent },
     { id: "delVendedor", rotulo: "Deletar vendedor", icon: UserMinus },
     { id: "delUsuario", rotulo: "Deletar usuário", icon: Trash2 },
   ]
@@ -41,6 +42,9 @@ export default function SettingsModal({ open, onClose, vendedores, onVendedoresM
         ))}
       </div>
 
+        {aba === "comissaoGeral" && (
+            <AbaComissaoGeral />
+        )}
       {aba === "comissao" && (
         <AbaComissao vendedores={vendedores} onSucesso={onVendedoresMudaram} />
       )}
@@ -51,7 +55,116 @@ export default function SettingsModal({ open, onClose, vendedores, onVendedoresM
     </Modal>
   )
 }
+/* --- Comissão geral da empresa --- */
+function AbaComissaoGeral() {
+    const [comissaoTotal, setComissaoTotal] = useState("")
+    const [carregando, setCarregando] = useState(true)
+    const [salvando, setSalvando] = useState(false)
 
+    const toast = useToast()
+
+    useEffect(() => {
+        async function carregarUsuario() {
+            try {
+                const usuario = await buscarUsuarioLogado()
+
+                setComissaoTotal(
+                    usuario?.comissaoTotal != null
+                        ? String(usuario.comissaoTotal)
+                        : "",
+                )
+            } catch (error) {
+                toast.erro(
+                    getFriendlyError(
+                        error,
+                        "Não foi possível carregar a comissão da empresa.",
+                    ),
+                )
+            } finally {
+                setCarregando(false)
+            }
+        }
+
+        carregarUsuario()
+    }, [])
+
+    async function handleSubmit(e) {
+        e.preventDefault()
+
+        const valor = Number(comissaoTotal)
+
+        if (comissaoTotal === "" || Number.isNaN(valor) || valor < 0) {
+            return toast.erro("Informe uma comissão total válida.")
+        }
+
+        setSalvando(true)
+
+        try {
+            const usuario = await alterarComissaoTotal(valor)
+
+            setComissaoTotal(String(usuario.comissaoTotal))
+
+            toast.sucesso("Comissão total atualizada com sucesso!",)
+        } catch (error) {
+            toast.erro(getFriendlyError(error, "Não foi possível alterar a comissão total.",),)
+        } finally {
+            setSalvando(false)
+        }
+    }
+
+    if (carregando) {
+        return (
+            <div className="py-6 text-center text-sm text-muted-foreground">Carregando configurações...
+            </div>
+        )
+    }
+
+    return (
+        <form
+            onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+                <Input
+                    id="comissao-total"
+                    label="Comissão total da empresa (%)"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ex: 2.5"
+                    value={comissaoTotal}
+                    onChange={(e) =>
+                        setComissaoTotal(e.target.value)
+                    }
+                />
+
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                    Essa porcentagem representa a comissão total da
+                    operação. O sistema descontará a comissão de cada
+                    vendedor para calcular quanto fica para você.
+                </p>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/50 p-3">
+                <p className="text-xs text-muted-foreground">
+                    Exemplo
+                </p>
+
+                <p className="mt-1 text-sm text-foreground">
+                    Comissão total de{" "}
+                    <strong>{comissaoTotal || "2,5"}%</strong> menos a
+                    comissão do vendedor = sua comissão.
+                </p>
+            </div>
+
+            <Button
+                type="submit"
+                loading={salvando}
+                className="self-end"
+            >
+                Salvar alterações
+            </Button>
+        </form>
+    )
+}
 /* --- Alterar comissão --- */
 function AbaComissao({ vendedores, onSucesso }) {
   const [id, setId] = useState("")
