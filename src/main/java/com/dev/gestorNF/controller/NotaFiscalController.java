@@ -3,6 +3,7 @@ package com.dev.gestorNF.controller;
 import com.dev.gestorNF.business.NotaFiscalService;
 import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
 import com.dev.gestorNF.business.dto.out.NotaFiscalDTOResponse;
+import com.dev.gestorNF.business.dto.out.ResultadoGeralDTO;
 import com.dev.gestorNF.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -92,6 +93,60 @@ public class NotaFiscalController {
                                                     @RequestParam("id") Long idVendedor,
                                                     @RequestParam("mes") YearMonth yearMonth){
         return ResponseEntity.ok(notaFiscalService.valorTotalComissao(token,idVendedor,yearMonth));
+    }
+    @Operation(summary = "Resultado geral mensal", description = "Retorna vendas e comissões de todos os vendedores no mês")
+    @ApiResponse(responseCode = "200", description = "Resultado calculado com sucesso")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
+    @GetMapping("/resultado-geral")
+    public ResponseEntity<ResultadoGeralDTO> buscarResultadoGeral(@RequestHeader(name = "Authorization", required = false) String token, @RequestParam("mes") YearMonth mes) {
+
+        return ResponseEntity.ok(notaFiscalService.buscarResultadoGeral(token, mes));
+    }
+    @Operation(
+            summary = "Exportar resultado geral em PDF",
+            description = "Gera o relatório consolidado mensal de todos os vendedores"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "PDF gerado com sucesso"
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Falha na autenticação"
+    )
+    @GetMapping("/resultado-geral/pdf")
+    public ResponseEntity<byte[]> gerarPdfResultadoGeral(
+            @RequestHeader(
+                    name = "Authorization",
+                    required = false
+            ) String token,
+            @RequestParam("mes") YearMonth mes
+    ) {
+
+        byte[] pdf =
+                notaFiscalService
+                        .gerarPdfResultadoGeral(
+                                token,
+                                mes
+                        );
+
+        String nomeArquivo =
+                "resultado-geral-"
+                        + mes
+                        + ".pdf";
+
+        return ResponseEntity.ok()
+                .header(
+                        "Content-Type",
+                        "application/pdf"
+                )
+                .header(
+                        "Content-Disposition",
+                        "attachment; filename=\""
+                                + nomeArquivo
+                                + "\""
+                )
+                .body(pdf);
     }
     @Operation(summary = "Relatório mensal", description = "Relatório mensal")
     @ApiResponse(responseCode = "200" , description = "Relatório exportado com sucesso")

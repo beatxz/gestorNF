@@ -20,12 +20,14 @@ public class NotaFiscalConverter {
                 .valorNotaFiscal(notaFiscalDTORequest.getValorNotaFiscal())
                 .dataVenda(notaFiscalDTORequest.getDataVenda())
                 .vendedor(vendedorEntity)
+                .codigoCliente(notaFiscalDTORequest.getCodigoCliente())
                 .build();
     }
     public NotaFiscalDTOResponse paraNotaFiscalDTOResponse (NotaFiscalEntity notaFiscalEntity){
         return NotaFiscalDTOResponse.builder()
                 .id(notaFiscalEntity.getId())
                 .numeroNotaFiscal(notaFiscalEntity.getNumeroNotaFiscal())
+                .codigoCliente(notaFiscalEntity.getCodigoCliente())
                 .nomeEmpresa(notaFiscalEntity.getNomeEmpresa())
                 .valorNotaFiscal(notaFiscalEntity.getValorNotaFiscal())
                 .dataVenda(notaFiscalEntity.getDataVenda())

@@ -26,14 +26,17 @@ export async function buscarNota(numeroNotaFiscal) {
 }
 
 // Cadastra uma nova nota fiscal. dataVenda no formato "dd-MM-yyyy".
-export async function cadastrarNota({ vendedorId, numeroNotaFiscal, nomeEmpresa, valorNotaFiscal, dataVenda }) {
+export async function cadastrarNota({vendedorId, numeroNotaFiscal, nomeEmpresa,
+                                      valorNotaFiscal, codigoCliente, dataVenda}) {
   const { data } = await api.post("/notaFiscal", {
     vendedorId: Number(vendedorId),
     numeroNotaFiscal: Number(numeroNotaFiscal),
     nomeEmpresa,
     valorNotaFiscal: Number(valorNotaFiscal),
+    codigoCliente,
     dataVenda,
   })
+
   return data
 }
 
@@ -69,6 +72,21 @@ export async function exportarRelatorio(mes, idVendedor) {
 
   const response = await api.get("/notaFiscal/relatorio", {
     params,
+    responseType: "blob",
+  })
+
+  return response.data
+}
+export async function buscarResultadoGeral(mes) {
+  const { data } = await api.get("/notaFiscal/resultado-geral", {
+    params: { mes },
+  })
+
+  return data
+}
+export async function exportarResultadoGeralPdf(mes) {
+  const response = await api.get("/notaFiscal/resultado-geral/pdf", {
+    params: { mes },
     responseType: "blob",
   })
 

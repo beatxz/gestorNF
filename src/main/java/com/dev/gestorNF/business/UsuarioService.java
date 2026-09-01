@@ -208,6 +208,32 @@ public class UsuarioService {
             );
         }
     }
+    public UsuarioDTOResponse atualizarComissaoTotal(String token, Double comissaoTotal) {
+
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (comissaoTotal == null || comissaoTotal < 0) {
+            throw new RuntimeException("Informe uma comissão total válida");
+        }
+
+        usuario.setComissaoTotal(comissaoTotal);
+
+        return usuarioConverter.paraUsuarioDTOResponse(
+                usuarioRepository.save(usuario)
+        );
+    }
+    public UsuarioDTOResponse buscarUsuarioLogado(String token) {
+
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        return usuarioConverter.paraUsuarioDTOResponse(usuario);
+    }
     public void deletarUsuario(String token) {
 
         String email = jwtUtil.extrairEmailToken(token.substring(7));
