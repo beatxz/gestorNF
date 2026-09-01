@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage.jsx";
 import RedefinirSenhaPage from "./pages/RedefinirSenhaPage.jsx";
 import EsqueciSenhaPage from "./pages/EsqueciSenhaPage.jsx";
 import ClientesPage from "./pages/ClientesPage.jsx";
+import ResultadoGeralPage from "./pages/ResultadoGeralPage.jsx";
 
 function RotaProtegida({ children }) {
   const { autenticado } = useAuth();
@@ -48,6 +49,14 @@ export default function App() {
             element={
                 <RotaProtegida>
                     <ClientesPage />
+                </RotaProtegida>
+            }
+        />
+        <Route
+            path="/resultado-geral"
+            element={
+                <RotaProtegida>
+                    <ResultadoGeralPage />
                 </RotaProtegida>
             }
         />

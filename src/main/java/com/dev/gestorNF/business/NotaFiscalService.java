@@ -1,15 +1,17 @@
 package com.dev.gestorNF.business;
 
+import com.dev.gestorNF.business.dto.in.ClienteDTORequest;
 import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
+import com.dev.gestorNF.business.dto.out.ClienteDTOResponse;
 import com.dev.gestorNF.business.dto.out.NotaFiscalDTOResponse;
+import com.dev.gestorNF.business.dto.out.ResultadoGeralDTO;
+import com.dev.gestorNF.business.dto.out.ResultadoGeralVendedorDTO;
 import com.dev.gestorNF.business.mapper.NotaFiscalConverter;
 import com.dev.gestorNF.infrastructure.entity.out.NotaFiscalEntity;
 import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import com.dev.gestorNF.infrastructure.entity.out.VendedorEntity;
 import com.dev.gestorNF.infrastructure.exception.ConflictException;
 import com.dev.gestorNF.infrastructure.repository.NotaFiscalRepository;
-import com.dev.gestorNF.business.dto.in.ClienteDTORequest;
-import com.dev.gestorNF.business.dto.out.ClienteDTOResponse;
 import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
 import com.dev.gestorNF.infrastructure.repository.VendedorRepository;
 import com.dev.gestorNF.infrastructure.security.JwtUtil;
@@ -27,6 +29,8 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -165,6 +169,351 @@ public class NotaFiscalService {
             return total;
 
         }
+    public ResultadoGeralDTO buscarResultadoGeral(
+            String token,
+            YearMonth mes
+    ) {
+
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Usuário não encontrado")
+                );
+
+        if (usuario.getComissaoTotal() == null) {
+            throw new RuntimeException(
+                    "Configure primeiro a comissão total da empresa"
+            );
+        }
+
+        LocalDate inicioMes = mes.atDay(1);
+        LocalDate fimMes = mes.atEndOfMonth();
+
+        List<NotaFiscalEntity> notas = notaFiscalRepository
+                .findByVendedorUsuarioIdAndDataVendaBetweenOrderByDataVendaAsc(
+                        usuario.getId(),
+                        inicioMes,
+                        fimMes
+                );
+
+        List<VendedorEntity> vendedores =
+                vendedorRepository.findByUsuarioEmail(email);
+
+        Map<Long, List<NotaFiscalEntity>> notasPorVendedor =
+                notas.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        nota ->
+                                                nota.getVendedor()
+                                                        .getIdVendedor()
+                                )
+                        );
+
+        List<ResultadoGeralVendedorDTO> resultadoVendedores =
+                vendedores.stream()
+                        .map(vendedor -> {
+
+                            List<NotaFiscalEntity> notasVendedor =
+                                    notasPorVendedor.getOrDefault(
+                                            vendedor.getIdVendedor(),
+                                            List.of()
+                                    );
+
+                            double totalVendas =
+                                    notasVendedor.stream()
+                                            .mapToDouble(
+                                                    NotaFiscalEntity::getValorNotaFiscal
+                                            )
+                                            .sum();
+
+                            double percentualVendedor =
+                                    vendedor.getComissao();
+
+                            double percentualUsuario =
+                                    Math.max(
+                                            0,
+                                            usuario.getComissaoTotal()
+                                                    - percentualVendedor
+                                    );
+
+                            double comissaoVendedor =
+                                    totalVendas *
+                                            (percentualVendedor / 100);
+
+                            double comissaoUsuario =
+                                    totalVendas *
+                                            (percentualUsuario / 100);
+
+                            return ResultadoGeralVendedorDTO.builder()
+                                    .idVendedor(vendedor.getIdVendedor())
+                                    .nomeVendedor(vendedor.getNome())
+                                    .totalVendas(totalVendas)
+                                    .percentualComissaoVendedor(
+                                            percentualVendedor
+                                    )
+                                    .comissaoVendedor(
+                                            comissaoVendedor
+                                    )
+                                    .percentualComissaoUsuario(
+                                            percentualUsuario
+                                    )
+                                    .comissaoUsuario(
+                                            comissaoUsuario
+                                    )
+                                    .build();
+                        })
+                        .toList();
+
+        double vendasTotais =
+                resultadoVendedores.stream()
+                        .mapToDouble(
+                                ResultadoGeralVendedorDTO::getTotalVendas
+                        )
+                        .sum();
+
+        double comissoesVendedores =
+                resultadoVendedores.stream()
+                        .mapToDouble(
+                                ResultadoGeralVendedorDTO::getComissaoVendedor
+                        )
+                        .sum();
+
+        double comissaoUsuario =
+                resultadoVendedores.stream()
+                        .mapToDouble(
+                                ResultadoGeralVendedorDTO::getComissaoUsuario
+                        )
+                        .sum();
+
+        return ResultadoGeralDTO.builder()
+                .mes(mes)
+                .comissaoTotalEmpresa(
+                        usuario.getComissaoTotal()
+                )
+                .vendasTotais(vendasTotais)
+                .comissoesVendedores(
+                        comissoesVendedores
+                )
+                .comissaoUsuario(
+                        comissaoUsuario
+                )
+                .vendedores(
+                        resultadoVendedores
+                )
+                .build();
+    }
+    public byte[] gerarPdfResultadoGeral(
+            String token,
+            YearMonth mes
+    ) {
+
+        ResultadoGeralDTO resultado =
+                buscarResultadoGeral(token, mes);
+
+        try {
+            ByteArrayOutputStream outputStream =
+                    new ByteArrayOutputStream();
+
+            Document document = new Document();
+
+            PdfWriter.getInstance(
+                    document,
+                    outputStream
+            );
+
+            document.open();
+
+            Font tituloFont =
+                    FontFactory.getFont(
+                            FontFactory.HELVETICA_BOLD,
+                            18
+                    );
+
+            Font subtituloFont =
+                    FontFactory.getFont(
+                            FontFactory.HELVETICA_BOLD,
+                            12
+                    );
+
+            Font normalFont =
+                    FontFactory.getFont(
+                            FontFactory.HELVETICA,
+                            10
+                    );
+
+            DateTimeFormatter formatadorMes =
+                    DateTimeFormatter.ofPattern(
+                            "MMMM 'de' yyyy",
+                            new Locale("pt", "BR")
+                    );
+
+            String mesFormatado =
+                    mes.atDay(1)
+                            .format(formatadorMes);
+
+            Paragraph titulo =
+                    new Paragraph(
+                            "GestorNF",
+                            tituloFont
+                    );
+
+            titulo.setAlignment(
+                    Element.ALIGN_CENTER
+            );
+
+            document.add(titulo);
+
+            Paragraph periodo =
+                    new Paragraph(
+                            "Resultado geral - "
+                                    + mesFormatado,
+                            subtituloFont
+                    );
+
+            periodo.setAlignment(
+                    Element.ALIGN_CENTER
+            );
+
+            periodo.setSpacingAfter(20);
+
+            document.add(periodo);
+
+            document.add(
+                    new Paragraph(
+                            "Comissão total da empresa: "
+                                    + resultado.getComissaoTotalEmpresa()
+                                    + "%",
+                            normalFont
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Vendas totais: "
+                                    + formatarMoeda(
+                                    resultado.getVendasTotais()
+                            ),
+                            subtituloFont
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Comissões dos vendedores: "
+                                    + formatarMoeda(
+                                    resultado.getComissoesVendedores()
+                            ),
+                            subtituloFont
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Sua comissão: "
+                                    + formatarMoeda(
+                                    resultado.getComissaoUsuario()
+                            ),
+                            subtituloFont
+                    )
+            );
+
+            Paragraph espaco =
+                    new Paragraph(" ");
+
+            espaco.setSpacingAfter(10);
+
+            document.add(espaco);
+
+            PdfPTable tabela =
+                    new PdfPTable(4);
+
+            tabela.setWidthPercentage(100);
+
+            tabela.setWidths(
+                    new float[]{
+                            2.2f,
+                            1.8f,
+                            2.2f,
+                            2.2f
+                    }
+            );
+
+            adicionarCabecalho(
+                    tabela,
+                    "Vendedor",
+                    "Vendas",
+                    "Comissão dele",
+                    "Sua comissão"
+            );
+
+            for (
+                    ResultadoGeralVendedorDTO vendedor :
+                    resultado.getVendedores()
+            ) {
+
+                tabela.addCell(
+                        new PdfPCell(
+                                new Phrase(
+                                        vendedor.getNomeVendedor(),
+                                        normalFont
+                                )
+                        )
+                );
+
+                tabela.addCell(
+                        new PdfPCell(
+                                new Phrase(
+                                        formatarMoeda(
+                                                vendedor.getTotalVendas()
+                                        ),
+                                        normalFont
+                                )
+                        )
+                );
+
+                tabela.addCell(
+                        new PdfPCell(
+                                new Phrase(
+                                        formatarMoeda(
+                                                vendedor.getComissaoVendedor()
+                                        )
+                                                + " ("
+                                                + vendedor.getPercentualComissaoVendedor()
+                                                + "%)",
+                                        normalFont
+                                )
+                        )
+                );
+
+                tabela.addCell(
+                        new PdfPCell(
+                                new Phrase(
+                                        formatarMoeda(
+                                                vendedor.getComissaoUsuario()
+                                        )
+                                                + " ("
+                                                + vendedor.getPercentualComissaoUsuario()
+                                                + "%)",
+                                        normalFont
+                                )
+                        )
+                );
+            }
+
+            document.add(tabela);
+
+            document.close();
+
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Erro ao gerar PDF do resultado geral",
+                    e
+            );
+        }
+    }
 
     public byte[] gerarRelatorioMensal(String token, YearMonth mes, Long idVendedor) {
 

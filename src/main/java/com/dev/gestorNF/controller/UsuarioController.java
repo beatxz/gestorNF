@@ -85,4 +85,16 @@ public class UsuarioController {
     public ResponseEntity<UsuarioDTOResponse>buscarUsuarioEmail(@RequestParam("email") String email){
        return ResponseEntity.ok(usuarioService.buscaUsuarioEmail(email));
     }
+    @Operation(summary = "Buscar usuário logado", description = "Retorna os dados do usuário autenticado")
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioDTOResponse> buscarUsuarioLogado(@RequestHeader(name = "Authorization") String token) {
+        return ResponseEntity.ok(usuarioService.buscarUsuarioLogado(token));
+    }
+    @Operation(summary = "Alterar comissão total", description = "Altera a comissão total da empresa do usuário autenticado"
+    )
+    @PatchMapping("/comissao-total")
+    public ResponseEntity<UsuarioDTOResponse> atualizarComissaoTotal(@RequestHeader(name = "Authorization") String token,
+                                                                     @RequestBody Double comissaoTotal) {
+        return ResponseEntity.ok(usuarioService.atualizarComissaoTotal(token, comissaoTotal));
+    }
 }

@@ -28,6 +28,8 @@ public class VendedorService {
         UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
 
+        validarComissao(usuarioEntity, vendedorDTORequest.getComissao());
+
         VendedorEntity vendedorEntity =
                 vendedorConverter.paraVendedorEntity(vendedorDTORequest);
 
@@ -76,9 +78,24 @@ public class VendedorService {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
         UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
                 .orElseThrow(()->new RuntimeException("Email não encontrado "+email));
+        validarComissao(usuarioEntity, comissao);
         VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
                 .orElseThrow(()->new RuntimeException("Id não encontrado "+idVendedor));
          vendedorEntity.setComissao(comissao);
         return vendedorConverter.paraVendedorDTOResponse(vendedorRepository.save(vendedorEntity));
+    }
+    private void validarComissao(UsuarioEntity usuario, Double comissaoVendedor) {
+
+        if (comissaoVendedor == null || comissaoVendedor < 0) {
+            throw new RuntimeException("Informe uma comissão válida");
+        }
+
+        if (usuario.getComissaoTotal() == null) {
+            throw new RuntimeException("Configure primeiro a comissão total da empresa");
+        }
+
+        if (comissaoVendedor > usuario.getComissaoTotal()) {
+            throw new RuntimeException("A comissão do vendedor não pode ser maior que a comissão total da empresa");
+        }
     }
 }
