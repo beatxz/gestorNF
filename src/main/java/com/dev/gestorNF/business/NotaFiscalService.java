@@ -334,19 +334,21 @@ public class NotaFiscalService {
     }
     private void adicionarTabelaNotas(Document document, List<NotaFiscalEntity> notas, Font font) throws Exception {
 
-        PdfPTable tabela = new PdfPTable(4);
+        PdfPTable tabela = new PdfPTable(5);
 
         tabela.setWidthPercentage(100);
 
-        tabela.setWidths(new float[]{1.3f, 3f, 1.5f, 1.7f});
+        tabela.setWidths(new float[]{1.2f, 1.5f, 3f, 1.5f, 1.7f});
 
-        adicionarCabecalho(tabela, "NF", "Cliente / Empresa", "Data", "Valor");
+        adicionarCabecalho(tabela, "NF", "Cód. Cliente", "Cliente / Empresa", "Data", "Valor");
 
         DateTimeFormatter dataFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         for (NotaFiscalEntity nota : notas) {
 
             tabela.addCell(new PdfPCell(new Phrase(String.valueOf(nota.getNumeroNotaFiscal()), font)));
+
+            tabela.addCell(new PdfPCell(new Phrase(nota.getCodigoCliente() != null ? nota.getCodigoCliente() : "-", font)));
 
             tabela.addCell(new PdfPCell(new Phrase(nota.getNomeEmpresa(), font)));
 
