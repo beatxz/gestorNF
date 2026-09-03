@@ -9,18 +9,14 @@ import { EmptyState } from "../components/ui/Feedback.jsx"
 import AddVendedorModal from "../components/modals/AddVendedorModal.jsx"
 import AddNotaModal from "../components/modals/AddNotaModal.jsx"
 import NotaDetalheModal from "../components/modals/NotaDetalheModal.jsx"
+import EditNotaModal from "../components/modals/EditNotaModal.jsx"
 import SettingsModal from "../components/modals/SettingsModal.jsx"
 import { useVendedores } from "../hooks/useVendedores.js"
 import { useAuth } from "../hooks/useAuth.jsx"
 import { useToast } from "../hooks/useToast.jsx"
 import { buscarVendedorPorId } from "../services/vendedorService.js"
 import { buscarUsuarioLogado } from "../services/authService.js"
-import {
-  listarNotasDoVendedor,
-  buscarNota,
-  buscarValorMensal,
-  buscarValorComissao,
-} from "../services/notaService.js"
+import {listarNotasDoVendedor, buscarNota, buscarValorMensal, buscarValorComissao,} from "../services/notaService.js"
 import { getFriendlyError } from "../services/api.js"
 import { mesAtual } from "../utils/format.js"
 import ExportarRelatorioModal from "../components/modals/ExportarRelatorioModal.jsx"
@@ -65,6 +61,7 @@ export default function HomePage() {
   const [modalNota, setModalNota] = useState(false)
   const [modalConfig, setModalConfig] = useState(false)
   const [notaDetalhe, setNotaDetalhe] = useState(null)
+  const [notaEditando, setNotaEditando] = useState(null)
   const [modalRelatorio, setModalRelatorio] = useState(false)
 
   const lista = buscaVendedor ? [buscaVendedor] : vendedores
@@ -246,10 +243,20 @@ export default function HomePage() {
     setBuscaCodigoCliente(null)
   }
 
+  function abrirEdicaoNota(nota) {
+    setNotaDetalhe(null)
+    setNotaEditando(nota)
+  }
+
   // Atualiza tudo após cadastrar/excluir nota.
   function recarregarNotas() {
     setModalNota(false)
     setNotaDetalhe(null)
+    setNotaEditando(null)
+
+    setBuscaNota(null)
+    setBuscaCodigoCliente(null)
+
     if (selecionado) {
       carregarNotas(selecionado.id)
       carregarValores(selecionado.id, mes)
@@ -452,11 +459,19 @@ export default function HomePage() {
         vendedor={selecionado}
       />
       <NotaDetalheModal
-        open={Boolean(notaDetalhe)}
-        onClose={() => setNotaDetalhe(null)}
-        nota={notaDetalhe}
-        vendedor={selecionado}
-        onExcluida={recarregarNotas}
+          open={Boolean(notaDetalhe)}
+          onClose={() => setNotaDetalhe(null)}
+          nota={notaDetalhe}
+          vendedor={selecionado}
+          onExcluida={recarregarNotas}
+          onEditar={abrirEdicaoNota}
+      />
+      <EditNotaModal
+          open={Boolean(notaEditando)}
+          onClose={() => setNotaEditando(null)}
+          onSucesso={recarregarNotas}
+          nota={notaEditando}
+          vendedores={vendedores}
       />
       <SettingsModal
         open={modalConfig}

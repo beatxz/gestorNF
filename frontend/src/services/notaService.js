@@ -39,6 +39,29 @@ export async function cadastrarNota({vendedorId, numeroNotaFiscal, nomeEmpresa,
 
   return data
 }
+// Edita uma nota fiscal existente.
+export async function editarNota(
+    id,
+    {
+      vendedorId,
+      numeroNotaFiscal,
+      nomeEmpresa,
+      valorNotaFiscal,
+      codigoCliente,
+      dataVenda,
+    },
+) {
+  const { data } = await api.put(`/notaFiscal/${id}`, {
+    vendedorId: Number(vendedorId),
+    numeroNotaFiscal: Number(numeroNotaFiscal),
+    nomeEmpresa,
+    valorNotaFiscal: Number(valorNotaFiscal),
+    codigoCliente,
+    dataVenda,
+  })
+
+  return data
+}
 
 // Deleta uma nota pelo número -> DELETE /notaFiscal?numeroNotaFiscal={numero}
 export async function deletarNota(numeroNotaFiscal) {

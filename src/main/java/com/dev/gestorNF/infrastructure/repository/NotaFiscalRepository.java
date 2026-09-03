@@ -15,6 +15,10 @@ public interface NotaFiscalRepository extends JpaRepository<NotaFiscalEntity,Lon
 
     Optional<NotaFiscalEntity> findByNumeroNotaFiscalAndVendedorIdVendedor(int numeroNotaFiscal, Long idVendedor);
 
+    Boolean existsByNumeroNotaFiscalAndVendedorUsuarioIdAndIdNot(int numeroNotaFiscal, Long usuarioId, Long id);
+
+    Optional<NotaFiscalEntity> findByIdAndVendedorUsuarioId(Long id, Long usuarioId);
+
     List<NotaFiscalEntity> findByVendedorIdVendedor(Long idVendedor);
 
     Optional<NotaFiscalEntity> findByNumeroNotaFiscalAndVendedorUsuarioId(int numeroNotaFiscal,Long usuarioId);

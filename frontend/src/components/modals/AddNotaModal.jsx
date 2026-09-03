@@ -1,10 +1,10 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
+import { CalendarDays } from "lucide-react"
 import Modal from "../ui/Modal.jsx"
 import Input from "../ui/Input.jsx"
 import Button from "../ui/Button.jsx"
 import { cadastrarNota } from "../../services/notaService.js"
 import { getFriendlyError } from "../../services/api.js"
-import { dataInputParaBackend } from "../../utils/format.js"
 import { useToast } from "../../hooks/useToast.jsx"
 import { buscarClientePorCodigo } from "../../services/clienteService.js"
 
@@ -20,6 +20,7 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
   const [buscandoCliente, setBuscandoCliente] = useState(false)
   const [valor, setValor] = useState("")
   const [data, setData] = useState("")
+  const calendarioRef = useRef(null)
   const [erros, setErros] = useState({})
   const [salvando, setSalvando] = useState(false)
   const toast = useToast()
@@ -62,13 +63,39 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
       setBuscandoCliente(false)
     }
   }
+  function normalizarValor(valorDigitado) {
+    if (!valorDigitado) return ""
+
+    return valorDigitado
+        .replace(/\./g, "")
+        .replace(",", ".")
+  }
+  function normalizarData(dataDigitada) {
+    if (!dataDigitada) return ""
+
+    const valor = dataDigitada.trim()
+
+    // Formato brasileiro: DD/MM/AAAA
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
+      const [dia, mes, ano] = valor.split("/")
+      return `${dia}-${mes}-${ano}`
+    }
+
+    // Formato do input date: AAAA-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+      const [ano, mes, dia] = valor.split("-")
+      return `${dia}-${mes}-${ano}`
+    }
+
+    return ""
+  }
 
   function validar() {
     const novos = {}
     if (!numero.trim()) novos.numero = "Informe o número da nota."
     if (!empresa.trim()) novos.empresa = "Informe o nome da empresa."
-    if (valor === "" || Number(valor) <= 0) novos.valor = "Informe um valor válido."
-    if (!data) novos.data = "Informe a data da venda."
+    if (valor === "" || Number(normalizarValor(valor)) <= 0) novos.valor = "Informe um valor válido."
+    if (!normalizarData(data)) {novos.data = "Informe a data no formato DD/MM/AAAA."}
     setErros(novos)
     return Object.keys(novos).length === 0
   }
@@ -83,8 +110,8 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
         numeroNotaFiscal: numero,
         nomeEmpresa: empresa.trim(),
         codigoCliente: codigoCliente.trim() || null,
-        valorNotaFiscal: valor,
-        dataVenda: dataInputParaBackend(data),
+        valorNotaFiscal: normalizarValor(valor),
+        dataVenda: normalizarData(data),
       })
       toast.sucesso("Nota fiscal cadastrada com sucesso!")
       limpar()
@@ -163,23 +190,65 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
             className={clienteEncontrado ? "cursor-not-allowed bg-muted" : ""}
         />
         <Input
-          id="n-valor"
-          label="Valor da nota (R$)"
-          type="number"
-          step="0.01"
-          placeholder="Ex: 300"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          error={erros.valor}
+            id="n-valor"
+            label="Valor da nota (R$)"
+            type="text"
+            inputMode="decimal"
+            placeholder="Ex: 1.250,50"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            error={erros.valor}
         />
-        <Input
-          id="n-data"
-          label="Data da venda"
-          type="date"
-          value={data}
-          onChange={(e) => setData(e.target.value)}
-          error={erros.data}
-        />
+        <div className="flex flex-col gap-1.5">
+          <label
+              htmlFor="n-data"
+              className="text-sm font-medium text-foreground"
+          >
+            Data da venda
+          </label>
+
+          <div className="relative">
+            <input
+                id="n-data"
+                type="text"
+                inputMode="numeric"
+                placeholder="Ex: 05/08/2026"
+                value={data}
+                onChange={(e) => setData(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 pr-12 text-sm text-foreground outline-none transition focus:border-primary"
+            />
+
+            <button
+                type="button"
+                onClick={() => calendarioRef.current?.showPicker()}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Abrir calendário"
+                title="Abrir calendário"
+            >
+              <CalendarDays size={18} />
+            </button>
+
+            <input
+                ref={calendarioRef}
+                type="date"
+                className="absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2 opacity-0 pointer-events-none"
+                onChange={(e) => {
+                  const valor = e.target.value
+
+                  if (!valor) return
+
+                  const [ano, mes, dia] = valor.split("-")
+                  setData(`${dia}/${mes}/${ano}`)
+                }}
+            />
+          </div>
+
+          {erros.data && (
+              <span className="text-xs text-red-500">
+      {erros.data}
+    </span>
+          )}
+        </div>
       </form>
     </Modal>
   )
