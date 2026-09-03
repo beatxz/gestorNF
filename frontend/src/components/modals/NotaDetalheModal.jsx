@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 import Modal from "../ui/Modal.jsx"
 import Button from "../ui/Button.jsx"
 import ConfirmDialog from "../ui/ConfirmDialog.jsx"
@@ -12,7 +12,7 @@ import { useToast } from "../../hooks/useToast.jsx"
  * Modal com os detalhes de uma nota fiscal e as ações "Ver detalhes" / "Excluir nota".
  * A confirmação de exclusão é exibida antes de remover.
  */
-export default function NotaDetalheModal({ open, onClose, nota, vendedor, onExcluida }) {
+export default function NotaDetalheModal({ open, onClose, nota, vendedor, onExcluida,onEditar }) {
   const [confirmando, setConfirmando] = useState(false)
   const [excluindo, setExcluindo] = useState(false)
   const toast = useToast()
@@ -49,10 +49,27 @@ export default function NotaDetalheModal({ open, onClose, nota, vendedor, onExcl
         title="Detalhes da nota fiscal"
         footer={
           <>
-            <Button variant="secondary" onClick={onClose}>
+            <Button
+                variant="secondary"
+                onClick={onClose}
+            >
               Fechar
             </Button>
-            <Button variant="danger" onClick={() => setConfirmando(true)}>
+
+            <Button
+                variant="outline"
+                onClick={() => onEditar(nota)}
+            >
+              <Pencil size={16} />
+              Editar nota
+            </Button>
+
+            <Button
+                variant="danger"
+                onClick={() =>
+                    setConfirmando(true)
+                }
+            >
               <Trash2 size={16} />
               Excluir nota
             </Button>
