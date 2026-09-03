@@ -36,6 +36,19 @@ public class NotaFiscalController {
                                                                     @RequestBody NotaFiscalDTORequest notaFiscalDTORequest){
     return ResponseEntity.ok(notaFiscalService.cadastrarNotaFiscal(token,notaFiscalDTORequest));
     }
+    @Operation(summary = "Editar nota fiscal", description = "Edita os dados de uma nota fiscal existente")
+    @ApiResponse(responseCode = "200", description = "Nota fiscal editada com sucesso")
+    @ApiResponse(responseCode = "400", description = "Nota fiscal não encontrada ou dados inválidos")
+    @ApiResponse(responseCode = "409", description = "Já existe outra nota com esse número")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+    @PutMapping("/{id}")
+    public ResponseEntity<NotaFiscalDTOResponse> editarNotaFiscal(@RequestHeader(name = "Authorization", required = false) String token,
+                                                                  @PathVariable Long id,
+                                                                  @RequestBody NotaFiscalDTORequest notaFiscalDTORequest) {
+
+        return ResponseEntity.ok(notaFiscalService.editarNotaFiscal(token, id, notaFiscalDTORequest));
+    }
     @Operation(summary = "Buscar nota fiscal", description = "Busca de nota Fiscal")
     @ApiResponse(responseCode = "200" , description = "Nota encontrada com sucesso")
     @ApiResponse(responseCode = "400", description = "Nota não encontrada")

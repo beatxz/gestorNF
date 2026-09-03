@@ -100,6 +100,49 @@ public class NotaFiscalService {
 
         return notaFiscalConverter.paraNotaFiscalDTOResponse(notaFiscalRepository.save(notaFiscalEntity));
     }
+    public NotaFiscalDTOResponse editarNotaFiscal(String token, Long idNota, NotaFiscalDTORequest notaFiscalDTORequest) {
+
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
+
+        NotaFiscalEntity notaFiscalEntity = notaFiscalRepository.findByIdAndVendedorUsuarioId(idNota, usuarioEntity.getId())
+                .orElseThrow(() -> new RuntimeException("Nota fiscal não encontrada"));
+
+        boolean numeroJaUtilizado = notaFiscalRepository.existsByNumeroNotaFiscalAndVendedorUsuarioIdAndIdNot(
+                                notaFiscalDTORequest.getNumeroNotaFiscal(),
+                                usuarioEntity.getId(),
+                                idNota
+                        );
+
+        if (numeroJaUtilizado) {
+            throw new ConflictException("Já existe outra nota fiscal com esse número");
+        }
+
+        VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(notaFiscalDTORequest.getVendedorId(),
+                        usuarioEntity.getId())
+                .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
+
+        String nomeEmpresaResolvido = resolverNomeEmpresa(
+                token, notaFiscalDTORequest.getVendedorId(), notaFiscalDTORequest.getCodigoCliente(), notaFiscalDTORequest.getNomeEmpresa());
+
+        notaFiscalEntity.setNumeroNotaFiscal(notaFiscalDTORequest.getNumeroNotaFiscal());
+
+        notaFiscalEntity.setNomeEmpresa(nomeEmpresaResolvido);
+
+        notaFiscalEntity.setCodigoCliente(notaFiscalDTORequest.getCodigoCliente());
+
+        notaFiscalEntity.setValorNotaFiscal(notaFiscalDTORequest.getValorNotaFiscal());
+
+        notaFiscalEntity.setDataVenda(notaFiscalDTORequest.getDataVenda());
+
+        notaFiscalEntity.setVendedor(vendedorEntity);
+
+        NotaFiscalEntity notaAtualizada = notaFiscalRepository.save(notaFiscalEntity);
+
+        return notaFiscalConverter.paraNotaFiscalDTOResponse(notaAtualizada);
+    }
 
     public void deletarNotaFiscal(String token, int numeroNotaFiscal) {
 
@@ -169,10 +212,7 @@ public class NotaFiscalService {
             return total;
 
         }
-    public ResultadoGeralDTO buscarResultadoGeral(
-            String token,
-            YearMonth mes
-    ) {
+    public ResultadoGeralDTO buscarResultadoGeral(String token, YearMonth mes) {
 
         String email = jwtUtil.extrairEmailToken(token.substring(7));
 
