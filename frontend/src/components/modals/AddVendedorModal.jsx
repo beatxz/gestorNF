@@ -46,7 +46,23 @@ export default function AddVendedorModal({ open, onClose, onSucesso }) {
       limpar()
       onSucesso(novo)
     } catch (error) {
-      toast.erro(getFriendlyError(error, "Não foi possível cadastrar o vendedor."))
+      const mensagemBackend =
+          error.response?.data?.message ||
+          error.response?.data?.mensagem ||
+          error.response?.data
+
+      if (
+          typeof mensagemBackend === "string" &&
+          mensagemBackend.toLowerCase().includes("comiss")
+      ) {
+        toast.erro(
+            "Cadastre a comissão geral da sua empresa antes de adicionar um vendedor."
+        )
+      } else {
+        toast.erro(
+            getFriendlyError(error, "Não foi possível cadastrar o vendedor.")
+        )
+      }
     } finally {
       setSalvando(false)
     }
