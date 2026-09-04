@@ -8,6 +8,11 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ClienteDTORequest {
+
     private String codigoCliente;
     private String nomeEmpresa;
+    private String cnpj;
+    private String telefone;
+    private String municipio;
+    private String transportadora;
 }

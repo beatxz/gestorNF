@@ -27,7 +27,7 @@ export async function buscarNota(numeroNotaFiscal) {
 
 // Cadastra uma nova nota fiscal. dataVenda no formato "dd-MM-yyyy".
 export async function cadastrarNota({vendedorId, numeroNotaFiscal, nomeEmpresa,
-                                      valorNotaFiscal, codigoCliente, dataVenda}) {
+                                      valorNotaFiscal, codigoCliente, dataVenda, cnpj, municipio, transportadora}) {
   const { data } = await api.post("/notaFiscal", {
     vendedorId: Number(vendedorId),
     numeroNotaFiscal: Number(numeroNotaFiscal),
@@ -35,6 +35,9 @@ export async function cadastrarNota({vendedorId, numeroNotaFiscal, nomeEmpresa,
     valorNotaFiscal: Number(valorNotaFiscal),
     codigoCliente,
     dataVenda,
+    cnpj: cnpj || null,
+    municipio: municipio || null,
+    transportadora: transportadora || null
   })
 
   return data
@@ -114,4 +117,16 @@ export async function exportarResultadoGeralPdf(mes) {
   })
 
   return response.data
+}
+export async function lerNotaPdf(arquivo) {
+  const formData = new FormData()
+  formData.append("arquivo", arquivo)
+
+  const { data } = await api.post("/notaFiscal/importar/ler", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  })
+
+  return data
 }

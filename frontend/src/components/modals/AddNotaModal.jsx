@@ -1,9 +1,9 @@
 import { useRef, useState } from "react"
-import { CalendarDays } from "lucide-react"
+import { CalendarDays, FileText, Keyboard, Upload, ArrowLeft } from "lucide-react"
 import Modal from "../ui/Modal.jsx"
 import Input from "../ui/Input.jsx"
 import Button from "../ui/Button.jsx"
-import { cadastrarNota } from "../../services/notaService.js"
+import { cadastrarNota, lerNotaPdf } from "../../services/notaService.js"
 import { getFriendlyError } from "../../services/api.js"
 import { useToast } from "../../hooks/useToast.jsx"
 import { buscarClientePorCodigo } from "../../services/clienteService.js"
@@ -23,6 +23,13 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
   const calendarioRef = useRef(null)
   const [erros, setErros] = useState({})
   const [salvando, setSalvando] = useState(false)
+  const [modo, setModo] = useState(null)
+  const [arquivo, setArquivo] = useState(null)
+  const [lendoPdf, setLendoPdf] = useState(false)
+  const [cnpj, setCnpj] = useState("")
+  const [municipio, setMunicipio] = useState("")
+  const [transportadora, setTransportadora] = useState("")
+  const [previaPdf, setPreviaPdf] = useState(false)
   const toast = useToast()
 
   function limpar() {
@@ -32,6 +39,12 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
     setClienteEncontrado(false)
     setValor("")
     setData("")
+    setCnpj("")
+    setMunicipio("")
+    setTransportadora("")
+    setArquivo(null)
+    setModo(null)
+    setPreviaPdf(false)
     setErros({})
   }
 
@@ -99,9 +112,41 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
     setErros(novos)
     return Object.keys(novos).length === 0
   }
+  async function handleLerPdf() {
+    if (!arquivo) {
+      toast.erro("Selecione uma nota fiscal em PDF.")
+      return
+    }
+
+    setLendoPdf(true)
+
+    try {
+      const dados = await lerNotaPdf(arquivo)
+
+      setNumero(String(dados.numeroNotaFiscal ?? ""))
+      setCodigoCliente(dados.codigoCliente ?? "")
+      setEmpresa(dados.nomeEmpresa ?? "")
+      setValor(
+          dados.valorNotaFiscal != null
+              ? Number(dados.valorNotaFiscal).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2,}) : ""
+      )
+      setData(
+          dados.dataEmissao ? dados.dataEmissao.replaceAll("-", "/") : "")
+      setCnpj(dados.cnpj ?? "")
+      setMunicipio(dados.municipio ?? "")
+      setTransportadora(dados.transportadora ?? "")
+
+      setPreviaPdf(true)
+    } catch (error) {
+      toast.erro(getFriendlyError(error, "Não foi possível ler a nota fiscal.")
+      )
+    } finally {
+      setLendoPdf(false)
+    }
+  }
 
   async function handleSubmit(e) {
-    e.preventDefault()
+    e?.preventDefault()
     if (!validar()) return
     setSalvando(true)
     try {
@@ -112,6 +157,9 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
         codigoCliente: codigoCliente.trim() || null,
         valorNotaFiscal: normalizarValor(valor),
         dataVenda: normalizarData(data),
+        cnpj: modo === "pdf" ? cnpj.trim() || null : null,
+        municipio: modo === "pdf" ? municipio.trim() || null : null,
+        transportadora: modo === "pdf" ? transportadora.trim() || null : null
       })
       toast.sucesso("Nota fiscal cadastrada com sucesso!")
       limpar()
@@ -130,16 +178,74 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
       title="Adicionar nota fiscal"
       footer={
         <>
-          <Button variant="secondary" onClick={fechar} disabled={salvando}>
+          <Button
+              variant="secondary"
+              onClick={fechar}
+              disabled={salvando || lendoPdf}
+          >
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} loading={salvando}>
-            Cadastrar nota
-          </Button>
+
+          {modo === "manual" && (
+              <Button
+                  onClick={handleSubmit}
+                  loading={salvando}
+              >
+                Cadastrar nota
+              </Button>
+          )}
+
+          {modo === "pdf" && previaPdf && (
+              <Button
+                  onClick={handleSubmit}
+                  loading={salvando}
+              >
+                Confirmar importação
+              </Button>
+          )}
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+      {!modo && (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+      <span className="text-sm font-medium text-foreground">
+        Vendedor
+      </span>
+
+              <div className="rounded-lg border border-border bg-muted px-3.5 py-2.5 text-sm text-foreground">
+                {vendedor ? vendedor.nome : "-"}
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Como deseja adicionar a nota fiscal?
+            </p>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                  type="button"
+                  onClick={() => setModo("manual")}
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border p-5 text-sm font-medium text-foreground transition hover:border-primary hover:bg-muted"
+              >
+                <Keyboard size={24} />
+                Digitar manualmente
+              </button>
+
+              <button
+                  type="button"
+                  onClick={() => setModo("pdf")}
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border p-5 text-sm font-medium text-foreground transition hover:border-primary hover:bg-muted"
+              >
+                <FileText size={24} />
+                Importar PDF
+              </button>
+            </div>
+          </div>
+      )}
+
+      {modo === "manual" && (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         {/* Vendedor selecionado (somente leitura) */}
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium text-foreground">Vendedor</span>
@@ -250,6 +356,157 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
           )}
         </div>
       </form>
+      )}
+      {modo === "pdf" && !previaPdf && (
+          <div className="flex flex-col gap-4">
+            <button
+                type="button"
+                onClick={() => setModo(null)}
+                className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft size={16} />
+              Voltar
+            </button>
+
+            <div className="flex flex-col gap-1.5">
+      <span className="text-sm font-medium text-foreground">
+        Vendedor
+      </span>
+
+              <div className="rounded-lg border border-border bg-muted px-3.5 py-2.5 text-sm text-foreground">
+                {vendedor ? vendedor.nome : "-"}
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border px-6 py-10 transition hover:border-primary hover:bg-muted/40">
+              <Upload size={28} className="text-muted-foreground" />
+
+              <span className="text-sm font-medium text-foreground">
+        Selecionar nota fiscal
+      </span>
+
+              <span className="text-xs text-muted-foreground">
+        Somente arquivo PDF
+      </span>
+
+              <input
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const selecionado = e.target.files?.[0] ?? null
+                    setArquivo(selecionado)
+                  }}
+              />
+            </label>
+
+            {arquivo && (
+                <div className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                  {arquivo.name}
+                </div>
+            )}
+
+            <Button
+                onClick={handleLerPdf}
+                loading={lendoPdf}
+                disabled={!arquivo}
+            >
+              Ler nota fiscal
+            </Button>
+          </div>
+      )}
+      {modo === "pdf" && previaPdf && (
+          <div className="flex flex-col gap-4">
+            <button
+                type="button"
+                onClick={() => {
+                  setPreviaPdf(false)
+                  setArquivo(null)
+                }}
+                className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft size={16} />
+              Escolher outro PDF
+            </button>
+
+            <div className="rounded-lg border border-border bg-muted/40 px-3.5 py-3">
+      <span className="text-xs text-muted-foreground">
+        Vendedor
+      </span>
+              <p className="text-sm font-medium text-foreground">
+                {vendedor?.nome || "-"}
+              </p>
+            </div>
+
+            <Input
+                id="pdf-numero"
+                label="Número da nota"
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                error={erros.numero}
+            />
+
+            <Input
+                id="pdf-codigo"
+                label="Código do cliente"
+                value={codigoCliente}
+                onChange={(e) => setCodigoCliente(e.target.value)}
+            />
+
+            <Input
+                id="pdf-empresa"
+                label="Nome da empresa"
+                value={empresa}
+                onChange={(e) => setEmpresa(e.target.value)}
+                error={erros.empresa}
+            />
+
+            <Input
+                id="pdf-valor"
+                label="Valor da nota (R$)"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                error={erros.valor}
+            />
+
+            <Input
+                id="pdf-data"
+                label="Data de emissão"
+                value={data}
+                onChange={(e) => setData(e.target.value)}
+                error={erros.data}
+            />
+
+            <div className="border-t border-border pt-4">
+              <p className="mb-3 text-sm font-semibold text-foreground">
+                Dados do cliente
+              </p>
+
+              <div className="flex flex-col gap-4">
+                <Input
+                    id="pdf-cnpj"
+                    label="CNPJ"
+                    value={cnpj}
+                    onChange={(e) => setCnpj(e.target.value)}
+                />
+
+                <Input
+                    id="pdf-municipio"
+                    label="Município"
+                    value={municipio}
+                    onChange={(e) => setMunicipio(e.target.value)}
+                />
+
+                <Input
+                    id="pdf-transportadora"
+                    label="Transportadora"
+                    value={transportadora}
+                    onChange={(e) => setTransportadora(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+      )}
     </Modal>
   )
 }
