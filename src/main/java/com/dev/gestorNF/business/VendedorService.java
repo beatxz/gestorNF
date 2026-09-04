@@ -3,14 +3,17 @@ package com.dev.gestorNF.business;
 import com.dev.gestorNF.business.dto.in.VendedorDTORequest;
 import com.dev.gestorNF.business.dto.out.VendedorDTOResponse;
 import com.dev.gestorNF.business.mapper.VendedorConverter;
+import com.dev.gestorNF.infrastructure.entity.out.ClienteEntity;
 import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import com.dev.gestorNF.infrastructure.entity.out.VendedorEntity;
+import com.dev.gestorNF.infrastructure.repository.ClienteRepository;
 import com.dev.gestorNF.infrastructure.repository.NotaFiscalRepository;
 import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
 import com.dev.gestorNF.infrastructure.repository.VendedorRepository;
 import com.dev.gestorNF.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,6 +26,7 @@ public class VendedorService {
     private final UsuarioRepository usuarioRepository;
     private final VendedorRepository vendedorRepository;
     private final NotaFiscalRepository notaFiscalRepository;
+    private final ClienteRepository clienteRepository;
 
     public VendedorDTOResponse cadastroVendedor(String token, VendedorDTORequest vendedorDTORequest) {
 
@@ -43,6 +47,7 @@ public class VendedorService {
         return vendedorConverter.paraVendedorDTOResponse(vendedorSalvo);
     }
 
+    @Transactional
     public void deletaVendedor(String token, Long idVendedor) {
 
         String email = jwtUtil.extrairEmailToken(token.substring(7));
@@ -68,6 +73,13 @@ public class VendedorService {
                     "Não é possível excluir este vendedor porque existem notas fiscais vinculadas a ele."
             );
         }
+
+        List<ClienteEntity> clientes =
+                clienteRepository.findByVendedorIdVendedor(idVendedor);
+
+        clientes.forEach(cliente -> cliente.setVendedor(null));
+
+        clienteRepository.saveAll(clientes);
 
         vendedorRepository.delete(vendedorEntity);
     }
