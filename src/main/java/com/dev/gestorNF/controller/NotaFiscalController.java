@@ -1,8 +1,10 @@
 package com.dev.gestorNF.controller;
 
+import com.dev.gestorNF.business.NotaFiscalImportacaoService;
 import com.dev.gestorNF.business.NotaFiscalService;
 import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
 import com.dev.gestorNF.business.dto.out.NotaFiscalDTOResponse;
+import com.dev.gestorNF.business.dto.out.NotaFiscalImportacaoDTOResponse;
 import com.dev.gestorNF.business.dto.out.ResultadoGeralDTO;
 import com.dev.gestorNF.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,8 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.YearMonth;
 import java.util.List;
@@ -25,6 +29,7 @@ import java.util.List;
 public class NotaFiscalController {
 
     private final NotaFiscalService notaFiscalService;
+    private final NotaFiscalImportacaoService notaFiscalImportacaoService;
 
     @Operation(summary = "Cadastrar nota fiscal", description = "Cadastro de nota Fiscal")
     @ApiResponse(responseCode = "200" , description = "Nota cadastrada com sucesso")
@@ -178,5 +183,10 @@ public class NotaFiscalController {
         return ResponseEntity.ok().header(
                 "Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"" + nomeArquivo + "\"").body(pdf);
+    }
+    @PostMapping(value = "/importar/ler", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<NotaFiscalImportacaoDTOResponse> lerNotaFiscal(@RequestPart("arquivo") MultipartFile arquivo) {
+
+        return ResponseEntity.ok(notaFiscalImportacaoService.importar(arquivo));
     }
 }
