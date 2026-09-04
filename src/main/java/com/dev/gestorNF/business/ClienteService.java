@@ -76,6 +76,10 @@ public class ClienteService {
 
         clienteEntity.setNomeEmpresa(clienteDTORequest.getNomeEmpresa());
         clienteEntity.setCodigoCliente(clienteDTORequest.getCodigoCliente());
+        clienteEntity.setCnpj(clienteDTORequest.getCnpj());
+        clienteEntity.setTelefone(clienteDTORequest.getTelefone());
+        clienteEntity.setMunicipio(clienteDTORequest.getMunicipio());
+        clienteEntity.setTransportadora(clienteDTORequest.getTransportadora());
 
         return clienteConverter.paraClienteDTOResponse(clienteRepository.save(clienteEntity));
     }
@@ -89,5 +93,80 @@ public class ClienteService {
         clienteEntity.setAtivo(ativo);
 
         return clienteConverter.paraClienteDTOResponse(clienteRepository.save(clienteEntity));
+    }
+    public ClienteEntity buscarOuCriarCliente(ClienteDTORequest clienteDTORequest, VendedorEntity vendedor) {
+        ClienteEntity clienteEntity = clienteRepository.findByCodigoCliente(clienteDTORequest.getCodigoCliente())
+                .orElseGet(() -> clienteConverter.paraClienteEntity(clienteDTORequest, vendedor));
+
+        clienteEntity.setNomeEmpresa(clienteDTORequest.getNomeEmpresa());
+        clienteEntity.setCnpj(clienteDTORequest.getCnpj());
+        clienteEntity.setMunicipio(clienteDTORequest.getMunicipio());
+        clienteEntity.setTransportadora(clienteDTORequest.getTransportadora());
+        clienteEntity.setVendedor(vendedor);
+        clienteEntity.setAtivo(true);
+
+        return clienteRepository.save(clienteEntity);
+    }
+    public ClienteDTOResponse vincularClienteDaNota(
+            String token,
+            VendedorEntity vendedor,
+            String codigoCliente,
+            String nomeEmpresa,
+            String cnpj,
+            String municipio,
+            String transportadora
+    ) {
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email não encontrado " + email));
+
+        ClienteEntity clienteEntity = clienteRepository
+                .findByCodigoClienteAndVendedorUsuarioId(codigoCliente, usuario.getId())
+                .orElse(null);
+
+        if (clienteEntity != null) {
+            if (nomeEmpresa != null && !nomeEmpresa.isBlank()) {
+                clienteEntity.setNomeEmpresa(nomeEmpresa);
+            }
+
+            if (cnpj != null && !cnpj.isBlank()) {
+                clienteEntity.setCnpj(cnpj);
+            }
+
+            if (municipio != null && !municipio.isBlank()) {
+                clienteEntity.setMunicipio(municipio);
+            }
+
+            if (transportadora != null && !transportadora.isBlank()) {
+                clienteEntity.setTransportadora(transportadora);
+            }
+
+            clienteEntity.setVendedor(vendedor);
+            clienteEntity.setAtivo(true);
+
+            return clienteConverter.paraClienteDTOResponse(
+                    clienteRepository.save(clienteEntity)
+            );
+        }
+
+        if (nomeEmpresa == null || nomeEmpresa.isBlank()) {
+            throw new RuntimeException("Informe o nome da empresa para cadastrar um novo código de cliente");
+        }
+
+        ClienteDTORequest novoCliente = ClienteDTORequest.builder()
+                .codigoCliente(codigoCliente)
+                .nomeEmpresa(nomeEmpresa)
+                .cnpj(cnpj)
+                .municipio(municipio)
+                .transportadora(transportadora)
+                .build();
+
+        ClienteEntity novoClienteEntity =
+                clienteConverter.paraClienteEntity(novoCliente, vendedor);
+
+        return clienteConverter.paraClienteDTOResponse(
+                clienteRepository.save(novoClienteEntity)
+        );
     }
 }

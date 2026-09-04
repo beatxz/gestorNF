@@ -65,7 +65,7 @@ public class VendedorService {
 
         boolean possuiNotas =
                 !notaFiscalRepository
-                        .findByVendedorIdVendedor(idVendedor)
+                        .findByVendedorIdVendedorOrderByDataVendaDesc(idVendedor)
                         .isEmpty();
 
         if (possuiNotas) {

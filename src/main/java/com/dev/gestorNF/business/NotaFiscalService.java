@@ -1,6 +1,5 @@
 package com.dev.gestorNF.business;
 
-import com.dev.gestorNF.business.dto.in.ClienteDTORequest;
 import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
 import com.dev.gestorNF.business.dto.out.ClienteDTOResponse;
 import com.dev.gestorNF.business.dto.out.NotaFiscalDTOResponse;
@@ -55,30 +54,17 @@ public class NotaFiscalService {
             throw new ConflictException("Nota Fiscal já cadastrada");
         }
     }
-    private String resolverNomeEmpresa(String token, Long idVendedor, String codigoCliente, String nomeEmpresaDigitado) {
-
+    private String resolverNomeEmpresa(String token, VendedorEntity vendedor,
+            String codigoCliente, String nomeEmpresaDigitado, String cnpj, String municipio, String transportadora
+    ) {
         if (codigoCliente == null || codigoCliente.isBlank()) {
             return nomeEmpresaDigitado;
         }
 
-        ClienteDTOResponse clienteExistente = clienteService.buscarPorCodigo(token, idVendedor, codigoCliente);
+        ClienteDTOResponse cliente = clienteService.vincularClienteDaNota(token, vendedor, codigoCliente, nomeEmpresaDigitado,
+                cnpj, municipio, transportadora);
 
-        if (clienteExistente != null) {
-            return clienteExistente.getNomeEmpresa();
-        }
-
-        if (nomeEmpresaDigitado == null || nomeEmpresaDigitado.isBlank()) {
-            throw new RuntimeException("Informe o nome da empresa para cadastrar um novo código de cliente");
-        }
-
-        ClienteDTORequest novoCliente = ClienteDTORequest.builder()
-                .codigoCliente(codigoCliente)
-                .nomeEmpresa(nomeEmpresaDigitado)
-                .build();
-
-        ClienteDTOResponse clienteCriado = clienteService.cadastrarCliente(token, idVendedor, novoCliente);
-
-        return clienteCriado.getNomeEmpresa();
+        return cliente.getNomeEmpresa();
     }
 
     public NotaFiscalDTOResponse cadastrarNotaFiscal(String token, NotaFiscalDTORequest notaFiscalDTORequest) {
@@ -94,8 +80,14 @@ public class NotaFiscalService {
                 .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
 
         String nomeEmpresaResolvido = resolverNomeEmpresa(
-                token, notaFiscalDTORequest.getVendedorId(), notaFiscalDTORequest.getCodigoCliente(), notaFiscalDTORequest.getNomeEmpresa());
-
+                token,
+                vendedorEntity,
+                notaFiscalDTORequest.getCodigoCliente(),
+                notaFiscalDTORequest.getNomeEmpresa(),
+                notaFiscalDTORequest.getCnpj(),
+                notaFiscalDTORequest.getMunicipio(),
+                notaFiscalDTORequest.getTransportadora()
+        );
         NotaFiscalEntity notaFiscalEntity = notaFiscalConverter.paraNotaFiscalEntity(notaFiscalDTORequest, vendedorEntity, nomeEmpresaResolvido);
 
         return notaFiscalConverter.paraNotaFiscalDTOResponse(notaFiscalRepository.save(notaFiscalEntity));
@@ -125,7 +117,14 @@ public class NotaFiscalService {
                 .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
 
         String nomeEmpresaResolvido = resolverNomeEmpresa(
-                token, notaFiscalDTORequest.getVendedorId(), notaFiscalDTORequest.getCodigoCliente(), notaFiscalDTORequest.getNomeEmpresa());
+                token,
+                vendedorEntity,
+                notaFiscalDTORequest.getCodigoCliente(),
+                notaFiscalDTORequest.getNomeEmpresa(),
+                notaFiscalDTORequest.getCnpj(),
+                notaFiscalDTORequest.getMunicipio(),
+                notaFiscalDTORequest.getTransportadora()
+        );
 
         notaFiscalEntity.setNumeroNotaFiscal(notaFiscalDTORequest.getNumeroNotaFiscal());
 
@@ -180,7 +179,7 @@ public class NotaFiscalService {
                 .orElseThrow(() ->
                         new RuntimeException("Vendedor não encontrado " + idVendedor));
 
-        return notaFiscalRepository.findByVendedorIdVendedor(idVendedor)
+        return notaFiscalRepository.findByVendedorIdVendedorOrderByDataVendaDesc(idVendedor)
                 .stream()
                 .map(notaFiscalConverter::paraNotaFiscalDTOResponse)
                 .toList();
