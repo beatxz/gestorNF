@@ -1,5 +1,6 @@
 package com.dev.gestorNF.controller;
 
+import com.dev.gestorNF.business.ImportacaoRateLimitService;
 import com.dev.gestorNF.business.NotaFiscalImportacaoService;
 import com.dev.gestorNF.business.NotaFiscalService;
 import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
@@ -9,9 +10,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,6 +31,7 @@ public class NotaFiscalController {
 
     private final NotaFiscalService notaFiscalService;
     private final NotaFiscalImportacaoService notaFiscalImportacaoService;
+    private final ImportacaoRateLimitService importacaoRateLimitService;
 
     @Operation(summary = "Cadastrar nota fiscal", description = "Cadastro de nota Fiscal")
     @ApiResponse(responseCode = "200" , description = "Nota cadastrada com sucesso")
@@ -35,8 +39,8 @@ public class NotaFiscalController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PostMapping
-    public ResponseEntity<NotaFiscalDTOResponse>cadastrarNotaFiscal(@RequestHeader(name = "Authorization",required = false) String token,
-                                                                    @RequestBody NotaFiscalDTORequest notaFiscalDTORequest){
+    public ResponseEntity<NotaFiscalDTOResponse>cadastrarNotaFiscal(@RequestHeader(name = "Authorization") String token,
+                                                                  @Valid @RequestBody NotaFiscalDTORequest notaFiscalDTORequest){
     return ResponseEntity.ok(notaFiscalService.cadastrarNotaFiscal(token,notaFiscalDTORequest));
     }
     @Operation(summary = "Editar nota fiscal", description = "Edita os dados de uma nota fiscal existente")
@@ -46,9 +50,9 @@ public class NotaFiscalController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PutMapping("/{id}")
-    public ResponseEntity<NotaFiscalDTOResponse> editarNotaFiscal(@RequestHeader(name = "Authorization", required = false) String token,
+    public ResponseEntity<NotaFiscalDTOResponse> editarNotaFiscal(@RequestHeader(name = "Authorization") String token,
                                                                   @PathVariable Long id,
-                                                                  @RequestBody NotaFiscalDTORequest notaFiscalDTORequest) {
+                                                                @Valid  @RequestBody NotaFiscalDTORequest notaFiscalDTORequest) {
 
         return ResponseEntity.ok(notaFiscalService.editarNotaFiscal(token, id, notaFiscalDTORequest));
     }
@@ -58,18 +62,18 @@ public class NotaFiscalController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @GetMapping
-    public ResponseEntity<NotaFiscalDTOResponse> buscarNotaFiscal(@RequestHeader(name = "Authorization", required = false) String token,
+    public ResponseEntity<NotaFiscalDTOResponse> buscarNotaFiscal(@RequestHeader(name = "Authorization") String token,
                                                                   @RequestParam("notaFiscal") int numeroNotaFiscal) {
 
         return ResponseEntity.ok(notaFiscalService.buscarNotaFiscal(token, numeroNotaFiscal));
     }
     @Operation(summary = "Deletar nota fiscal", description = "Deleta nota Fiscal")
-    @ApiResponse(responseCode = "200" , description = "Nota deletada com sucesso")
+    @ApiResponse(responseCode = "200" , description = "Nota excluida com sucesso")
     @ApiResponse(responseCode = "400", description = "Nota não encontrada")
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @DeleteMapping
-    public ResponseEntity<Void> DeletaNotaFiscal(@RequestHeader(name = "Authorization", required = false) String token,
+    public ResponseEntity<Void> DeletaNotaFiscal(@RequestHeader(name = "Authorization") String token,
                                                  @RequestParam("numeroNotaFiscal") int numeroNotaFiscal){
         notaFiscalService.deletarNotaFiscal(token,numeroNotaFiscal);
         return ResponseEntity.ok().build();
@@ -81,20 +85,20 @@ public class NotaFiscalController {
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @GetMapping("/vendedor/{idVendedor}")
     public ResponseEntity<List<NotaFiscalDTOResponse>> buscarNotasDoVendedor(
-            @RequestHeader(name = "Authorization", required = false) String token,
+            @RequestHeader(name = "Authorization") String token,
             @PathVariable Long idVendedor) {
 
         return ResponseEntity.ok(
                 notaFiscalService.buscarNotasDoVendedor(token, idVendedor)
         );
     }
-    @Operation(summary = "Valor total de notas fiscais mensal", description = "Valor total mensal de notas fiscis")
+    @Operation(summary = "Valor total de notas fiscais mensal", description = "Valor total mensal de notas fiscais")
     @ApiResponse(responseCode = "200" , description = "Valor calculado com sucesso")
     @ApiResponse(responseCode = "400", description = "Notas não encontradas")
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @GetMapping("/valorMensal")
-    public ResponseEntity<Double>valorTotalMensal(@RequestHeader(name = "Authorization",required = false) String token,
+    public ResponseEntity<Double>valorTotalMensal(@RequestHeader(name = "Authorization") String token,
                                                   @RequestParam("id") Long idVendedor,
                                                   @RequestParam ("mes")YearMonth yearMonth){
        return ResponseEntity.ok(notaFiscalService.valorTotalMensal(token,idVendedor,yearMonth));
@@ -105,7 +109,7 @@ public class NotaFiscalController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @GetMapping("/valorComissao")
-    public ResponseEntity<Double>valorTotalComissao(@RequestHeader(name = "Authorization",required = false) String token,
+    public ResponseEntity<Double>valorTotalComissao(@RequestHeader(name = "Authorization") String token,
                                                     @RequestParam("id") Long idVendedor,
                                                     @RequestParam("mes") YearMonth yearMonth){
         return ResponseEntity.ok(notaFiscalService.valorTotalComissao(token,idVendedor,yearMonth));
@@ -114,46 +118,23 @@ public class NotaFiscalController {
     @ApiResponse(responseCode = "200", description = "Resultado calculado com sucesso")
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @GetMapping("/resultado-geral")
-    public ResponseEntity<ResultadoGeralDTO> buscarResultadoGeral(@RequestHeader(name = "Authorization", required = false) String token, @RequestParam("mes") YearMonth mes) {
+    public ResponseEntity<ResultadoGeralDTO> buscarResultadoGeral(@RequestHeader(name = "Authorization") String token, @RequestParam("mes") YearMonth mes) {
 
         return ResponseEntity.ok(notaFiscalService.buscarResultadoGeral(token, mes));
     }
-    @Operation(
-            summary = "Exportar resultado geral em PDF",
-            description = "Gera o relatório consolidado mensal de todos os vendedores"
-    )
-    @ApiResponse(
-            responseCode = "200",
-            description = "PDF gerado com sucesso"
-    )
-    @ApiResponse(
-            responseCode = "403",
-            description = "Falha na autenticação"
-    )
+    @Operation(summary = "Exportar resultado geral em PDF", description = "Gera o relatório consolidado mensal de todos os vendedores")
+    @ApiResponse(responseCode = "200", description = "PDF gerado com sucesso")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @GetMapping("/resultado-geral/pdf")
-    public ResponseEntity<byte[]> gerarPdfResultadoGeral(
-            @RequestHeader(
-                    name = "Authorization",
-                    required = false
-            ) String token,
-            @RequestParam("mes") YearMonth mes
-    ) {
+    public ResponseEntity<byte[]> gerarPdfResultadoGeral(@RequestHeader(name = "Authorization") String token, @RequestParam("mes") YearMonth mes) {
 
         byte[] pdf =
-                notaFiscalService
-                        .gerarPdfResultadoGeral(
-                                token,
-                                mes
-                        );
+                notaFiscalService.gerarPdfResultadoGeral(token, mes);
 
-        String nomeArquivo =
-                "resultado-geral-"
-                        + mes
-                        + ".pdf";
+        String nomeArquivo = "resultado-geral-" + mes + ".pdf";
 
         return ResponseEntity.ok()
-                .header("Content-Type",
-                        "application/pdf")
+                .header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"" + nomeArquivo + "\"").body(pdf);
     }
     @Operation(summary = "Relatório mensal", description = "Relatório mensal")
@@ -171,26 +152,45 @@ public class NotaFiscalController {
         return ResponseEntity.ok().header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"" + nomeArquivo + "\"").body(pdf);
     }
+    @Operation(summary = "Importar nota fiscal", description = "Importar nota fiscal")
+    @ApiResponse(responseCode = "200" , description = "Relatório importado com sucesso")
+    @ApiResponse(responseCode = "400", description = "Notas invalida")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+    @PostMapping(
+            value = "/importar/ler",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<NotaFiscalImportacaoDTOResponse> lerNotaFiscal(@RequestPart("arquivo") MultipartFile arquivo,
+                                                                         Authentication authentication) {
 
-    @PostMapping(value = "/importar/ler", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<NotaFiscalImportacaoDTOResponse> lerNotaFiscal(@RequestPart("arquivo") MultipartFile arquivo) {
+        importacaoRateLimitService.verificar(authentication.getName());
 
         return ResponseEntity.ok(notaFiscalImportacaoService.importar(arquivo));
     }
 
+    @Operation(summary = "Importar notas fiscais", description = "Importar notas fiscais")
+    @ApiResponse(responseCode = "200" , description = "notas fiscais importadas com sucesso")
+    @ApiResponse(responseCode = "400", description = "Notas invalida")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PostMapping(value = "/importar/ler-lote", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<List<NotaFiscalImportacaoLoteDTOResponse>> lerNotasFiscais(
-            @RequestPart("arquivos") List<MultipartFile> arquivos) {
+    public ResponseEntity<List<NotaFiscalImportacaoLoteDTOResponse>> lerNotasFiscais(@RequestPart("arquivos") List<MultipartFile> arquivos,
+                                                                                     Authentication authentication) {
 
+        importacaoRateLimitService.verificar(authentication.getName());
         return ResponseEntity.ok(notaFiscalImportacaoService.importarLote(arquivos));
     }
+    @Operation(summary = "Confirmação de lote de notas fiscais", description = "Confirmação de lote de notas fiscais")
+    @ApiResponse(responseCode = "200" , description = "notas fiscais validas")
+    @ApiResponse(responseCode = "400", description = "Notas invalida")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PostMapping("/importar/confirmar-lote")
-    public ResponseEntity<List<NotaFiscalImportacaoResultadoDTOResponse>> confirmarImportacaoLote(
+    public ResponseEntity<List<@Valid NotaFiscalImportacaoResultadoDTOResponse>> confirmarImportacaoLote(
             @RequestHeader("Authorization") String token,
             @RequestBody List<NotaFiscalDTORequest> notas) {
 
-        return ResponseEntity.ok(
-                notaFiscalService.cadastrarNotasEmLote(token, notas)
-        );
+        return ResponseEntity.ok(notaFiscalService.cadastrarNotasEmLote(token, notas));
     }
 }

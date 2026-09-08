@@ -339,7 +339,7 @@ function SelectVendedor({ value, onChange, vendedores }) {
         <option value="">Selecione um vendedor</option>
         {vendedores.map((v) => (
           <option key={v.id} value={v.id}>
-            {v.nome} (ID {v.id})
+            {v.nome}
           </option>
         ))}
       </select>

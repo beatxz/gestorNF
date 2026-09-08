@@ -19,10 +19,16 @@ import java.util.regex.Pattern;
 @Service
 public class NotaFiscalImportacaoService {
 
+    private static final long TAMANHO_MAXIMO_PDF = 10 * 1024 * 1024;
+
     public String extrairTexto(MultipartFile arquivo) {
 
         if (arquivo == null || arquivo.isEmpty()) {
             throw new RuntimeException("Selecione um arquivo PDF");
+        }
+
+        if (arquivo.getSize() > TAMANHO_MAXIMO_PDF) {
+            throw new RuntimeException("O arquivo PDF deve ter no máximo 10 MB");
         }
 
         if (!"application/pdf".equalsIgnoreCase(arquivo.getContentType())) {
@@ -104,8 +110,7 @@ public class NotaFiscalImportacaoService {
                                 .nota(null)
                                 .valida(false)
                                 .erro(e.getMessage())
-                                .build()
-                );
+                                .build());
             }
         }
 
@@ -123,8 +128,7 @@ public class NotaFiscalImportacaoService {
 
     private String extrairCodigoCliente(String texto) {
         Matcher matcher = Pattern.compile(
-                "(?m)^(\\d+)\\s+-\\s+.+?\\s+\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\s+\\d{2}/\\d{2}/\\d{4}\\s*$"
-        ).matcher(texto);
+                "(?m)^(\\d+)\\s+-\\s+.+?\\s+\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\s+\\d{2}/\\d{2}/\\d{4}\\s*$").matcher(texto);
 
         if (matcher.find()) {
             return matcher.group(1);
@@ -134,9 +138,8 @@ public class NotaFiscalImportacaoService {
     }
 
     private String extrairNomeEmpresa(String texto) {
-        Matcher matcher = Pattern.compile(
-                "(?m)^\\d+\\s+-\\s+(.+?)\\s+\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\s+\\d{2}/\\d{2}/\\d{4}\\s*$"
-        ).matcher(texto);
+        Matcher matcher = Pattern.compile("(?m)^\\d+\\s+-\\s+(.+?)\\s+\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\s+\\d{2}/\\d{2}/\\d{4}\\s*$")
+                .matcher(texto);
 
         if (matcher.find()) {
             return matcher.group(1).trim();
@@ -163,10 +166,7 @@ public class NotaFiscalImportacaoService {
         ).matcher(texto);
 
         if (matcher.find()) {
-            return LocalDate.parse(
-                    matcher.group(1),
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy")
-            );
+            return LocalDate.parse(matcher.group(1), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         }
 
         return null;

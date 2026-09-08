@@ -37,7 +37,6 @@ public class NotaFiscalService {
     private final JwtUtil jwtUtil;
     private final UsuarioRepository usuarioRepository;
     private final VendedorRepository vendedorRepository;
-    private final VendedorService vendedorService;
     private final NotaFiscalConverter notaFiscalConverter;
     private final ClienteService clienteService;
 
@@ -231,7 +230,7 @@ public class NotaFiscalService {
 
             String email = jwtUtil.extrairEmailToken(token.substring(7));
             UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Email não encontrado " + token));
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
             VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
                     .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
         return vendedorEntity.getNotasFiscais()
@@ -248,7 +247,7 @@ public class NotaFiscalService {
 
             String email = jwtUtil.extrairEmailToken(token.substring(7));
         UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Email não encontrado " + token));
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
             VendedorEntity vendedorEntity = vendedorRepository.findByIdVendedorAndUsuarioId(idVendedor,usuarioEntity.getId())
                     .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
             Double total = valorTotalMensal(token, idVendedor, yearMonth) * (vendedorEntity.getComissao() / 100);
@@ -261,48 +260,30 @@ public class NotaFiscalService {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
 
         UsuarioEntity usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Usuário não encontrado")
-                );
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         if (usuario.getComissaoTotal() == null) {
-            throw new RuntimeException(
-                    "Configure primeiro a comissão total da empresa"
-            );
+            throw new RuntimeException("Configure primeiro a comissão total da empresa");
         }
 
         LocalDate inicioMes = mes.atDay(1);
         LocalDate fimMes = mes.atEndOfMonth();
 
         List<NotaFiscalEntity> notas = notaFiscalRepository
-                .findByVendedorUsuarioIdAndDataVendaBetweenOrderByDataVendaAsc(
-                        usuario.getId(),
-                        inicioMes,
-                        fimMes
-                );
+                .findByVendedorUsuarioIdAndDataVendaBetweenOrderByDataVendaAsc(usuario.getId(), inicioMes, fimMes);
 
         List<VendedorEntity> vendedores =
                 vendedorRepository.findByUsuarioEmail(email);
 
         Map<Long, List<NotaFiscalEntity>> notasPorVendedor =
-                notas.stream()
-                        .collect(
-                                Collectors.groupingBy(
-                                        nota ->
-                                                nota.getVendedor()
-                                                        .getIdVendedor()
-                                )
-                        );
+                notas.stream().collect(Collectors.groupingBy(
+                                        nota -> nota.getVendedor().getIdVendedor()));
 
         List<ResultadoGeralVendedorDTO> resultadoVendedores =
                 vendedores.stream()
                         .map(vendedor -> {
 
-                            List<NotaFiscalEntity> notasVendedor =
-                                    notasPorVendedor.getOrDefault(
-                                            vendedor.getIdVendedor(),
-                                            List.of()
-                                    );
+                            List<NotaFiscalEntity> notasVendedor = notasPorVendedor.getOrDefault(vendedor.getIdVendedor(), List.of());
 
                             double totalVendas =
                                     notasVendedor.stream()
@@ -311,40 +292,24 @@ public class NotaFiscalService {
                                             )
                                             .sum();
 
-                            double percentualVendedor =
-                                    vendedor.getComissao();
+                            double percentualVendedor = vendedor.getComissao();
 
                             double percentualUsuario =
-                                    Math.max(
-                                            0,
-                                            usuario.getComissaoTotal()
-                                                    - percentualVendedor
-                                    );
+                                    Math.max(0, usuario.getComissaoTotal() - percentualVendedor);
 
                             double comissaoVendedor =
-                                    totalVendas *
-                                            (percentualVendedor / 100);
+                                    totalVendas * (percentualVendedor / 100);
 
-                            double comissaoUsuario =
-                                    totalVendas *
-                                            (percentualUsuario / 100);
+                            double comissaoUsuario = totalVendas *(percentualUsuario / 100);
 
                             return ResultadoGeralVendedorDTO.builder()
                                     .idVendedor(vendedor.getIdVendedor())
                                     .nomeVendedor(vendedor.getNome())
                                     .totalVendas(totalVendas)
-                                    .percentualComissaoVendedor(
-                                            percentualVendedor
-                                    )
-                                    .comissaoVendedor(
-                                            comissaoVendedor
-                                    )
-                                    .percentualComissaoUsuario(
-                                            percentualUsuario
-                                    )
-                                    .comissaoUsuario(
-                                            comissaoUsuario
-                                    )
+                                    .percentualComissaoVendedor(percentualVendedor)
+                                    .comissaoVendedor(comissaoVendedor)
+                                    .percentualComissaoUsuario(percentualUsuario)
+                                    .comissaoUsuario(comissaoUsuario)
                                     .build();
                         })
                         .toList();
@@ -365,152 +330,82 @@ public class NotaFiscalService {
 
         double comissaoUsuario =
                 resultadoVendedores.stream()
-                        .mapToDouble(
-                                ResultadoGeralVendedorDTO::getComissaoUsuario
-                        )
+                        .mapToDouble(ResultadoGeralVendedorDTO::getComissaoUsuario)
                         .sum();
 
         return ResultadoGeralDTO.builder()
                 .mes(mes)
-                .comissaoTotalEmpresa(
-                        usuario.getComissaoTotal()
-                )
+                .comissaoTotalEmpresa(usuario.getComissaoTotal())
                 .vendasTotais(vendasTotais)
-                .comissoesVendedores(
-                        comissoesVendedores
-                )
-                .comissaoUsuario(
-                        comissaoUsuario
-                )
-                .vendedores(
-                        resultadoVendedores
-                )
+                .comissoesVendedores(comissoesVendedores)
+                .comissaoUsuario(comissaoUsuario)
+                .vendedores(resultadoVendedores)
                 .build();
     }
-    public byte[] gerarPdfResultadoGeral(
-            String token,
-            YearMonth mes
-    ) {
+    public byte[] gerarPdfResultadoGeral(String token, YearMonth mes) {
 
-        ResultadoGeralDTO resultado =
-                buscarResultadoGeral(token, mes);
+        ResultadoGeralDTO resultado = buscarResultadoGeral(token, mes);
 
         try {
-            ByteArrayOutputStream outputStream =
-                    new ByteArrayOutputStream();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             Document document = new Document();
 
-            PdfWriter.getInstance(
-                    document,
-                    outputStream
-            );
+            PdfWriter.getInstance(document, outputStream);
 
             document.open();
 
             Font tituloFont =
-                    FontFactory.getFont(
-                            FontFactory.HELVETICA_BOLD,
-                            18
-                    );
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
 
             Font subtituloFont =
-                    FontFactory.getFont(
-                            FontFactory.HELVETICA_BOLD,
-                            12
-                    );
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
 
             Font normalFont =
-                    FontFactory.getFont(
-                            FontFactory.HELVETICA,
-                            10
-                    );
+                    FontFactory.getFont(FontFactory.HELVETICA, 10);
 
             DateTimeFormatter formatadorMes =
-                    DateTimeFormatter.ofPattern(
-                            "MMMM 'de' yyyy",
-                            new Locale("pt", "BR")
-                    );
+                    DateTimeFormatter.ofPattern("MMMM 'de' yyyy", new Locale("pt", "BR"));
 
             String mesFormatado =
                     mes.atDay(1)
                             .format(formatadorMes);
 
             Paragraph titulo =
-                    new Paragraph(
-                            "GestorNF",
-                            tituloFont
-                    );
+                    new Paragraph("GestorNF", tituloFont);
 
-            titulo.setAlignment(
-                    Element.ALIGN_CENTER
-            );
+            titulo.setAlignment(Element.ALIGN_CENTER);
 
             document.add(titulo);
 
             Paragraph periodo =
-                    new Paragraph(
-                            "Resultado geral - "
-                                    + mesFormatado,
-                            subtituloFont
-                    );
+                    new Paragraph("Resultado geral - " + mesFormatado, subtituloFont);
 
-            periodo.setAlignment(
-                    Element.ALIGN_CENTER
-            );
+            periodo.setAlignment(Element.ALIGN_CENTER);
 
             periodo.setSpacingAfter(20);
 
             document.add(periodo);
 
             document.add(
-                    new Paragraph(
-                            "Comissão total da empresa: "
-                                    + resultado.getComissaoTotalEmpresa()
-                                    + "%",
-                            normalFont
-                    )
-            );
+                    new Paragraph("Comissão total da empresa: " + resultado.getComissaoTotalEmpresa() + "%", normalFont));
 
             document.add(
-                    new Paragraph(
-                            "Vendas totais: "
-                                    + formatarMoeda(
-                                    resultado.getVendasTotais()
-                            ),
-                            subtituloFont
-                    )
-            );
+                    new Paragraph("Vendas totais: " + formatarMoeda(resultado.getVendasTotais()), subtituloFont));
 
             document.add(
-                    new Paragraph(
-                            "Comissões dos vendedores: "
-                                    + formatarMoeda(
-                                    resultado.getComissoesVendedores()
-                            ),
-                            subtituloFont
-                    )
-            );
+                    new Paragraph("Comissões dos vendedores: " + formatarMoeda(resultado.getComissoesVendedores()), subtituloFont));
 
             document.add(
-                    new Paragraph(
-                            "Sua comissão: "
-                                    + formatarMoeda(
-                                    resultado.getComissaoUsuario()
-                            ),
-                            subtituloFont
-                    )
-            );
+                    new Paragraph("Sua comissão: " + formatarMoeda(resultado.getComissaoUsuario()),subtituloFont));
 
-            Paragraph espaco =
-                    new Paragraph(" ");
+            Paragraph espaco = new Paragraph(" ");
 
             espaco.setSpacingAfter(10);
 
             document.add(espaco);
 
-            PdfPTable tabela =
-                    new PdfPTable(4);
+            PdfPTable tabela = new PdfPTable(4);
 
             tabela.setWidthPercentage(100);
 
@@ -537,52 +432,17 @@ public class NotaFiscalService {
             ) {
 
                 tabela.addCell(
-                        new PdfPCell(
-                                new Phrase(
-                                        vendedor.getNomeVendedor(),
-                                        normalFont
-                                )
-                        )
-                );
+                        new PdfPCell(new Phrase(vendedor.getNomeVendedor(), normalFont)));
+
+                tabela.addCell(
+                        new PdfPCell(new Phrase(formatarMoeda(vendedor.getTotalVendas()), normalFont)));
+
+                tabela.addCell(new PdfPCell(new Phrase(formatarMoeda(vendedor.getComissaoVendedor()
+                                        ) + " (" + vendedor.getPercentualComissaoVendedor() + "%)",normalFont)));
 
                 tabela.addCell(
                         new PdfPCell(
-                                new Phrase(
-                                        formatarMoeda(
-                                                vendedor.getTotalVendas()
-                                        ),
-                                        normalFont
-                                )
-                        )
-                );
-
-                tabela.addCell(
-                        new PdfPCell(
-                                new Phrase(
-                                        formatarMoeda(
-                                                vendedor.getComissaoVendedor()
-                                        )
-                                                + " ("
-                                                + vendedor.getPercentualComissaoVendedor()
-                                                + "%)",
-                                        normalFont
-                                )
-                        )
-                );
-
-                tabela.addCell(
-                        new PdfPCell(
-                                new Phrase(
-                                        formatarMoeda(
-                                                vendedor.getComissaoUsuario()
-                                        )
-                                                + " ("
-                                                + vendedor.getPercentualComissaoUsuario()
-                                                + "%)",
-                                        normalFont
-                                )
-                        )
-                );
+                                new Phrase(formatarMoeda(vendedor.getComissaoUsuario()) + " (" + vendedor.getPercentualComissaoUsuario() + "%)", normalFont)));
             }
 
             document.add(tabela);
@@ -592,10 +452,7 @@ public class NotaFiscalService {
             return outputStream.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Erro ao gerar PDF do resultado geral",
-                    e
-            );
+            throw new RuntimeException("Erro ao gerar PDF do resultado geral", e);
         }
     }
 
@@ -813,9 +670,7 @@ public class NotaFiscalService {
         }
     }
     private String formatarMoeda(double valor) {
-
-        NumberFormat formato =
-                NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+        NumberFormat formato = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
 
         return formato.format(valor);
     }

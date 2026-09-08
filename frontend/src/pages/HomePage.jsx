@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import {Settings, LogOut, UserRound, BadgePercent, Hash, Download, Users, ChartNoAxesCombined,Menu} from "lucide-react"
+import {Settings, LogOut, UserRound, BadgePercent, Download, Users, ChartNoAxesCombined,Menu} from "lucide-react"
 import VendedorSidebar from "../components/VendedorSidebar.jsx"
 import FinanceCards from "../components/FinanceCards.jsx"
 import MonthPicker from "../components/MonthPicker.jsx"
@@ -392,13 +392,9 @@ export default function HomePage() {
                   </h2>
 
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-
-      <span className="flex items-center gap-1.5">
-        <Hash size={14} /> ID {selecionado.id}
-      </span>
-
-                    <span className="flex items-center gap-1.5"><BadgePercent size={14} /> Comissão {selecionado.comissao}%</span>
-
+  <span className="flex items-center gap-1.5">
+    <BadgePercent size={14} /> Comissão {selecionado.comissao}%
+  </span>
                   </div>
                 </div>
 

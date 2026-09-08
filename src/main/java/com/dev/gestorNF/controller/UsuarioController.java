@@ -1,6 +1,7 @@
 package com.dev.gestorNF.controller;
 
 import com.dev.gestorNF.business.UsuarioService;
+import com.dev.gestorNF.business.dto.in.LoginDTORequest;
 import com.dev.gestorNF.business.dto.in.RedefinirSenhaDTORequest;
 import com.dev.gestorNF.business.dto.in.UsuarioDTORequest;
 import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
@@ -37,8 +38,8 @@ public class UsuarioController {
     @ApiResponse(responseCode = "400", description = "Usuário não cadastrado")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PostMapping("/login")
-    public ResponseEntity<String>login(@RequestBody UsuarioDTORequest usuarioDTORequest){
-        return ResponseEntity.ok(usuarioService.autenticarUsuario(usuarioDTORequest));
+    public ResponseEntity<String>login(@Valid @RequestBody LoginDTORequest loginDTORequest){
+        return ResponseEntity.ok(usuarioService.autenticarUsuario(loginDTORequest));
     }
     @Operation(summary = "Deletar usuário", description = "Deleta um usuário por email")
     @ApiResponse(responseCode = "200", description = "Usuário deletado com sucesso")
@@ -77,21 +78,16 @@ public class UsuarioController {
         usuarioService.redefinirSenha(request);
         return ResponseEntity.ok("Senha redefinida com sucesso!");
     }
-    @Operation(summary = "Buscar usuário", description = "Busca um usuário por Email")
-    @ApiResponse(responseCode = "200", description = "usuário encontrado com sucesso")
-    @ApiResponse(responseCode = "400", description = "usuário não encontrado")
-    @ApiResponse(responseCode = "500", description = "Erro de servidor")
-    @GetMapping
-    public ResponseEntity<UsuarioDTOResponse>buscarUsuarioEmail(@RequestParam("email") String email){
-       return ResponseEntity.ok(usuarioService.buscaUsuarioEmail(email));
-    }
     @Operation(summary = "Buscar usuário logado", description = "Retorna os dados do usuário autenticado")
     @GetMapping("/me")
     public ResponseEntity<UsuarioDTOResponse> buscarUsuarioLogado(@RequestHeader(name = "Authorization") String token) {
         return ResponseEntity.ok(usuarioService.buscarUsuarioLogado(token));
     }
-    @Operation(summary = "Alterar comissão total", description = "Altera a comissão total da empresa do usuário autenticado"
-    )
+    @Operation(summary = "Alterar comissão total", description = "Altera a comissão total da empresa do usuário autenticado")
+    @ApiResponse(responseCode = "200" , description = "Cliente editado com sucesso")
+    @ApiResponse(responseCode = "400", description = "Não foi possível editar dados do cliente")
+    @ApiResponse(responseCode = "403", description = "Falha na autenticação")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PatchMapping("/comissao-total")
     public ResponseEntity<UsuarioDTOResponse> atualizarComissaoTotal(@RequestHeader(name = "Authorization") String token,
                                                                      @RequestBody Double comissaoTotal) {

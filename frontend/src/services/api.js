@@ -69,19 +69,28 @@ api.interceptors.response.use(
  */
 export function getFriendlyError(error, fallback = "Algo deu errado. Tente novamente.") {
   if (error?.response) {
+    const status = error.response.status
     const data = error.response.data
-    if (typeof data === "string" && data.trim()) return data
-    if (data?.message) return data.message
-    if (data?.error) return data.error
-    if (error.response.status === 429)return "Muitas tentativas. Aguarde alguns minutos e tente novamente."
-      if (error.response.status === 403)return "Você não tem permissão para realizar esta operação."
-    if (error.response.status === 404) return "Registro não encontrado."
-    if (error.response.status === 409) return "Este registro já existe."
-    return fallback
+
+    const mensagemBackend =
+        (typeof data === "string" && data.trim()) ||
+        data?.message ||
+        data?.error
+
+    if (status === 401) return "Sua sessão expirou. Faça login novamente."
+    if (status === 403) return "Você não tem permissão para realizar esta operação."
+    if (status === 404) return "Recurso não encontrado."
+    if (status === 429) return mensagemBackend || "Muitas tentativas. Aguarde alguns minutos e tente novamente."
+    if (status === 400 || status === 409) return mensagemBackend || fallback
+    if (status >= 500) return "Não foi possível concluir a operação. Tente novamente."
+
+    return mensagemBackend || fallback
   }
+
   if (error?.request) {
-    return "Não foi possível conectar ao servidor. Verifique se a API está ativa."
+    return "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
   }
+
   return fallback
 }
 
