@@ -1,9 +1,9 @@
 import { useRef, useState } from "react"
-import { CalendarDays, FileText, Keyboard, Upload, ArrowLeft } from "lucide-react"
+import { CalendarDays, FileText, Keyboard, Upload, ArrowLeft,Pencil, Trash2 } from "lucide-react"
 import Modal from "../ui/Modal.jsx"
 import Input from "../ui/Input.jsx"
 import Button from "../ui/Button.jsx"
-import { cadastrarNota, lerNotaPdf } from "../../services/notaService.js"
+import { cadastrarNota, lerNotasPdf , cadastrarNotasEmLote} from "../../services/notaService.js"
 import { getFriendlyError } from "../../services/api.js"
 import { useToast } from "../../hooks/useToast.jsx"
 import { buscarClientePorCodigo } from "../../services/clienteService.js"
@@ -24,12 +24,12 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
   const [erros, setErros] = useState({})
   const [salvando, setSalvando] = useState(false)
   const [modo, setModo] = useState(null)
-  const [arquivo, setArquivo] = useState(null)
+  const [arquivos, setArquivos] = useState([])
   const [lendoPdf, setLendoPdf] = useState(false)
-  const [cnpj, setCnpj] = useState("")
-  const [municipio, setMunicipio] = useState("")
-  const [transportadora, setTransportadora] = useState("")
-  const [previaPdf, setPreviaPdf] = useState(false)
+  const [notasImportadas, setNotasImportadas] = useState([])
+  const [arquivosInvalidos, setArquivosInvalidos] = useState([])
+  const [editandoIndice, setEditandoIndice] = useState(null)
+  const [notaEditando, setNotaEditando] = useState(null)
   const toast = useToast()
 
   function limpar() {
@@ -39,12 +39,12 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
     setClienteEncontrado(false)
     setValor("")
     setData("")
-    setCnpj("")
-    setMunicipio("")
-    setTransportadora("")
-    setArquivo(null)
+    setArquivos([])
+    setNotasImportadas([])
+    setArquivosInvalidos([])
+    setEditandoIndice(null)
+    setNotaEditando(null)
     setModo(null)
-    setPreviaPdf(false)
     setErros({})
   }
 
@@ -113,42 +113,143 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
     return Object.keys(novos).length === 0
   }
   async function handleLerPdf() {
-    if (!arquivo) {
-      toast.erro("Selecione uma nota fiscal em PDF.")
+    if (arquivos.length === 0) {
+      toast.erro("Selecione pelo menos uma nota fiscal em PDF.")
       return
     }
 
     setLendoPdf(true)
 
     try {
-      const dados = await lerNotaPdf(arquivo)
+      const dados = await lerNotasPdf(arquivos)
 
-      setNumero(String(dados.numeroNotaFiscal ?? ""))
-      setCodigoCliente(dados.codigoCliente ?? "")
-      setEmpresa(dados.nomeEmpresa ?? "")
-      setValor(
-          dados.valorNotaFiscal != null
-              ? Number(dados.valorNotaFiscal).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2,}) : ""
-      )
-      setData(
-          dados.dataEmissao ? dados.dataEmissao.replaceAll("-", "/") : "")
-      setCnpj(dados.cnpj ?? "")
-      setMunicipio(dados.municipio ?? "")
-      setTransportadora(dados.transportadora ?? "")
+      const validas = dados
+          .filter((item) => item.valida && item.nota)
+          .map((item, index) => ({
+            ...item.nota,
+            nomeArquivo: item.nomeArquivo,
+            idLocal: `${item.nota.numeroNotaFiscal}-${index}`
+          }))
 
-      setPreviaPdf(true)
+      const invalidas = dados
+          .filter((item) => !item.valida)
+          .map((item, index) => ({
+            nomeArquivo: item.nomeArquivo,
+            erro: item.erro || "Arquivo inválido",
+            idLocal: `invalido-${index}`
+          }))
+
+      setNotasImportadas(validas)
+      setArquivosInvalidos(invalidas)
+
+      if (validas.length === 0) {
+        toast.erro("Nenhuma nota fiscal válida foi encontrada.")
+      }
+
     } catch (error) {
-      toast.erro(getFriendlyError(error, "Não foi possível ler a nota fiscal.")
+      toast.erro(
+          getFriendlyError(
+              error,
+              "Não foi possível ler as notas fiscais."
+          )
       )
     } finally {
       setLendoPdf(false)
     }
   }
+  function excluirNotaImportada(indice) {
+    setNotasImportadas((anteriores) =>
+        anteriores.filter((_, i) => i !== indice)
+    )
+  }
+
+  function abrirEdicaoNota(nota, indice) {
+    setEditandoIndice(indice)
+
+    setNotaEditando({
+      ...nota,
+      numeroNotaFiscal: String(nota.numeroNotaFiscal ?? ""),
+      codigoCliente: nota.codigoCliente ?? "",
+      nomeEmpresa: nota.nomeEmpresa ?? "",
+      valorNotaFiscal:
+          nota.valorNotaFiscal != null
+              ? Number(nota.valorNotaFiscal).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })
+              : "",
+      dataEmissao: nota.dataEmissao
+          ? nota.dataEmissao.replaceAll("-", "/")
+          : "",
+      cnpj: nota.cnpj ?? "",
+      municipio: nota.municipio ?? "",
+      transportadora: nota.transportadora ?? ""
+    })
+  }
+
+  function cancelarEdicaoNota() {
+    setEditandoIndice(null)
+    setNotaEditando(null)
+  }
+
+  function salvarEdicaoNota() {
+    if (!notaEditando.numeroNotaFiscal.trim()) {
+      toast.erro("Informe o número da nota.")
+      return
+    }
+
+    if (!notaEditando.nomeEmpresa.trim()) {
+      toast.erro("Informe o nome da empresa.")
+      return
+    }
+
+    if (
+        !notaEditando.valorNotaFiscal ||
+        Number(normalizarValor(notaEditando.valorNotaFiscal)) <= 0
+    ) {
+      toast.erro("Informe um valor válido.")
+      return
+    }
+
+    const dataNormalizada = normalizarData(
+        notaEditando.dataEmissao
+    )
+
+    if (!dataNormalizada) {
+      toast.erro("Informe uma data válida.")
+      return
+    }
+
+    const notaAtualizada = {
+      ...notaEditando,
+      numeroNotaFiscal: Number(
+          notaEditando.numeroNotaFiscal
+      ),
+      valorNotaFiscal: Number(
+          normalizarValor(notaEditando.valorNotaFiscal)
+      ),
+      dataEmissao: dataNormalizada
+    }
+
+    setNotasImportadas((anteriores) =>
+        anteriores.map((nota, indice) =>
+            indice === editandoIndice
+                ? notaAtualizada
+                : nota
+        )
+    )
+
+    setEditandoIndice(null)
+    setNotaEditando(null)
+  }
 
   async function handleSubmit(e) {
     e?.preventDefault()
+
     if (!validar()) return
+
     setSalvando(true)
+
     try {
       await cadastrarNota({
         vendedorId: vendedor.id,
@@ -157,20 +258,105 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
         codigoCliente: codigoCliente.trim() || null,
         valorNotaFiscal: normalizarValor(valor),
         dataVenda: normalizarData(data),
-        cnpj: modo === "pdf" ? cnpj.trim() || null : null,
-        municipio: modo === "pdf" ? municipio.trim() || null : null,
-        transportadora: modo === "pdf" ? transportadora.trim() || null : null
+        cnpj: null,
+        municipio: null,
+        transportadora: null
       })
+
       toast.sucesso("Nota fiscal cadastrada com sucesso!")
       limpar()
       onSucesso()
     } catch (error) {
-      toast.erro(getFriendlyError(error, "Não foi possível cadastrar a nota."))
+      toast.erro(
+          getFriendlyError(
+              error,
+              "Não foi possível cadastrar a nota."
+          )
+      )
     } finally {
       setSalvando(false)
     }
   }
+  async function handleConfirmarImportacao() {
+    if (notasImportadas.length === 0) {
+      toast.erro("Nenhuma nota fiscal para importar.")
+      return
+    }
 
+    setSalvando(true)
+
+    try {
+      const notas = notasImportadas.map((nota) => ({
+        vendedorId: vendedor.id,
+        numeroNotaFiscal: Number(nota.numeroNotaFiscal),
+        nomeEmpresa: nota.nomeEmpresa?.trim() || "",
+        codigoCliente: nota.codigoCliente?.trim() || null,
+        valorNotaFiscal: Number(nota.valorNotaFiscal),
+        dataVenda: nota.dataEmissao,
+        cnpj: nota.cnpj?.trim() || null,
+        municipio: nota.municipio?.trim() || null,
+        transportadora: nota.transportadora?.trim() || null
+      }))
+
+      const resultado = await cadastrarNotasEmLote(notas)
+
+      const importadas = resultado.filter(
+          (item) => item.importada
+      )
+
+      const falhas = resultado.filter(
+          (item) => !item.importada
+      )
+
+      if (falhas.length === 0) {
+        toast.sucesso(
+            `${importadas.length} ${
+                importadas.length === 1
+                    ? "nota importada"
+                    : "notas importadas"
+            } com sucesso!`
+        )
+
+        limpar()
+        onSucesso()
+        return
+      }
+
+      const errosPorIndice = new Map(
+          falhas.map((item) => [
+            item.indice,
+            item.erro || "Não foi possível importar esta nota."
+          ])
+      )
+
+      setNotasImportadas((anteriores) =>
+          anteriores
+              .map((nota, indice) => ({
+                ...nota,
+                erroImportacao: errosPorIndice.get(indice)
+              }))
+              .filter((nota) => nota.erroImportacao)
+      )
+
+      if (importadas.length > 0) {
+        onSucesso()
+      }
+
+      toast.erro(
+          `${importadas.length} importadas e ${falhas.length} não importadas. Confira as notas que permaneceram na tela.`
+      )
+
+    } catch (error) {
+      toast.erro(
+          getFriendlyError(
+              error,
+              "Não foi possível concluir a importação."
+          )
+      )
+    } finally {
+      setSalvando(false)
+    }
+  }
   return (
     <Modal
       open={open}
@@ -195,14 +381,18 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
               </Button>
           )}
 
-          {modo === "pdf" && previaPdf && (
-              <Button
-                  onClick={handleSubmit}
-                  loading={salvando}
-              >
-                Confirmar importação
-              </Button>
-          )}
+          {modo === "pdf" &&
+              notasImportadas.length > 0 &&
+              editandoIndice === null && (
+                  <Button
+                      onClick={handleConfirmarImportacao}
+                      loading={salvando}
+                      disabled={notasImportadas.length === 0}
+                  >
+                    Importar {notasImportadas.length}{" "}
+                    {notasImportadas.length === 1 ? "nota" : "notas"}
+                  </Button>
+              )}
         </>
       }
     >
@@ -357,7 +547,9 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
         </div>
       </form>
       )}
-      {modo === "pdf" && !previaPdf && (
+      {modo === "pdf" &&
+          notasImportadas.length === 0 &&
+          arquivosInvalidos.length === 0 && (
           <div className="flex flex-col gap-4">
             <button
                 type="button"
@@ -382,131 +574,350 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
               <Upload size={28} className="text-muted-foreground" />
 
               <span className="text-sm font-medium text-foreground">
-        Selecionar nota fiscal
-      </span>
+  Selecionar notas fiscais
+</span>
 
               <span className="text-xs text-muted-foreground">
-        Somente arquivo PDF
-      </span>
+  Selecione até 50 arquivos PDF
+</span>
 
               <input
                   type="file"
                   accept="application/pdf"
+                  multiple
                   className="hidden"
                   onChange={(e) => {
-                    const selecionado = e.target.files?.[0] ?? null
-                    setArquivo(selecionado)
+                    const selecionados = Array.from(
+                        e.target.files || []
+                    )
+
+                    setArquivos(selecionados)
                   }}
               />
             </label>
 
-            {arquivo && (
-                <div className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground">
-                  {arquivo.name}
+            {arquivos.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <div className="rounded-lg border border-border bg-muted px-3 py-2 text-sm font-medium text-foreground">
+                    {arquivos.length}{" "}
+                    {arquivos.length === 1
+                        ? "arquivo selecionado"
+                        : "arquivos selecionados"}
+                  </div>
+
+                  <div className="max-h-32 overflow-y-auto rounded-lg border border-border">
+                    {arquivos.map((arquivo, indice) => (
+                        <div
+                            key={`${arquivo.name}-${indice}`}
+                            className="border-b border-border px-3 py-2 text-xs text-muted-foreground last:border-b-0"
+                        >
+                          {arquivo.name}
+                        </div>
+                    ))}
+                  </div>
                 </div>
             )}
 
             <Button
                 onClick={handleLerPdf}
                 loading={lendoPdf}
-                disabled={!arquivo}
+                disabled={arquivos.length === 0}
             >
-              Ler nota fiscal
+              {arquivos.length <= 1
+                  ? "Ler nota fiscal"
+                  : `Ler ${arquivos.length} notas fiscais`}
             </Button>
           </div>
       )}
-      {modo === "pdf" && previaPdf && (
-          <div className="flex flex-col gap-4">
-            <button
-                type="button"
-                onClick={() => {
-                  setPreviaPdf(false)
-                  setArquivo(null)
-                }}
-                className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft size={16} />
-              Escolher outro PDF
-            </button>
-
-            <div className="rounded-lg border border-border bg-muted/40 px-3.5 py-3">
-      <span className="text-xs text-muted-foreground">
-        Vendedor
-      </span>
-              <p className="text-sm font-medium text-foreground">
-                {vendedor?.nome || "-"}
-              </p>
-            </div>
-
-            <Input
-                id="pdf-numero"
-                label="Número da nota"
-                value={numero}
-                onChange={(e) => setNumero(e.target.value)}
-                error={erros.numero}
-            />
-
-            <Input
-                id="pdf-codigo"
-                label="Código do cliente"
-                value={codigoCliente}
-                onChange={(e) => setCodigoCliente(e.target.value)}
-            />
-
-            <Input
-                id="pdf-empresa"
-                label="Nome da empresa"
-                value={empresa}
-                onChange={(e) => setEmpresa(e.target.value)}
-                error={erros.empresa}
-            />
-
-            <Input
-                id="pdf-valor"
-                label="Valor da nota (R$)"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                error={erros.valor}
-            />
-
-            <Input
-                id="pdf-data"
-                label="Data de emissão"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-                error={erros.data}
-            />
-
-            <div className="border-t border-border pt-4">
-              <p className="mb-3 text-sm font-semibold text-foreground">
-                Dados do cliente
-              </p>
-
+      {modo === "pdf" &&
+          (notasImportadas.length > 0 ||
+              arquivosInvalidos.length > 0) &&
+          editandoIndice === null && (
               <div className="flex flex-col gap-4">
-                <Input
-                    id="pdf-cnpj"
-                    label="CNPJ"
-                    value={cnpj}
-                    onChange={(e) => setCnpj(e.target.value)}
-                />
 
-                <Input
-                    id="pdf-municipio"
-                    label="Município"
-                    value={municipio}
-                    onChange={(e) => setMunicipio(e.target.value)}
-                />
+                <button
+                    type="button"
+                    onClick={() => {
+                      setNotasImportadas([])
+                      setArquivosInvalidos([])
+                      setArquivos([])
+                    }}
+                    className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft size={16} />
+                  Escolher outros PDFs
+                </button>
 
-                <Input
-                    id="pdf-transportadora"
-                    label="Transportadora"
-                    value={transportadora}
-                    onChange={(e) => setTransportadora(e.target.value)}
-                />
+                <div className="rounded-lg border border-border bg-muted/40 px-3.5 py-3">
+        <span className="text-xs text-muted-foreground">
+          Vendedor
+        </span>
+
+                  <p className="text-sm font-medium text-foreground">
+                    {vendedor?.nome || "-"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {notasImportadas.length}{" "}
+                    {notasImportadas.length === 1
+                        ? "nota válida encontrada"
+                        : "notas válidas encontradas"}
+                  </p>
+                  {arquivosInvalidos.length > 0 && (
+                      <p className="text-xs text-red-500">
+                        {arquivosInvalidos.length}{" "}
+                        {arquivosInvalidos.length === 1
+                            ? "arquivo não pôde ser importado"
+                            : "arquivos não puderam ser importados"}
+                      </p>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">
+                    Confira os dados antes de importar.
+                  </p>
+                  {arquivosInvalidos.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {arquivosInvalidos.map((arquivo) => (
+                            <div
+                                key={arquivo.idLocal}
+                                className="rounded-lg border border-red-200 bg-red-50 p-3"
+                            >
+                              <p className="text-sm font-medium text-red-700">
+                                {arquivo.nomeArquivo}
+                              </p>
+
+                              <p className="mt-1 text-xs text-red-600">
+                                {arquivo.erro}
+                              </p>
+                            </div>
+                        ))}
+                      </div>
+                  )}
+                </div>
+
+                <div className="max-h-[420px] overflow-y-auto rounded-xl border border-border">
+                  {notasImportadas.map((nota, indice) => (
+                      <div
+                          key={nota.idLocal}
+                          className="flex items-center justify-between gap-4 border-b border-border p-4 last:border-b-0"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">
+                  NF {nota.numeroNotaFiscal || "-"}
+                </span>
+
+                            <span className="text-xs text-muted-foreground">
+                  {nota.dataEmissao
+                      ? nota.dataEmissao.replaceAll("-", "/")
+                      : "-"}
+                </span>
+                          </div>
+
+                          <p className="truncate text-sm text-foreground">
+                            {nota.nomeEmpresa || "Empresa não identificada"}
+                          </p>
+                          {nota.erroImportacao && (
+                              <p className="mt-1 text-xs font-medium text-red-500">
+                                {nota.erroImportacao}
+                              </p>
+                          )}
+
+                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span>
+                  Cliente: {nota.codigoCliente || "-"}
+                </span>
+
+                            <span>
+                  {Number(
+                      nota.valorNotaFiscal || 0
+                  ).toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL"
+                  })}
+                </span>
+
+                            <span>
+                  {nota.municipio || "-"}
+                </span>
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                              type="button"
+                              onClick={() =>
+                                  abrirEdicaoNota(nota, indice)
+                              }
+                              className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                              title="Editar nota"
+                          >
+                            <Pencil size={17} />
+                          </button>
+
+                          <button
+                              type="button"
+                              onClick={() =>
+                                  excluirNotaImportada(indice)
+                              }
+                              className="rounded-lg p-2 text-red-500 transition hover:bg-red-50"
+                              title="Excluir da importação"
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        </div>
+                      </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between rounded-lg bg-muted px-3.5 py-3">
+        <span className="text-sm text-muted-foreground">
+          Total
+        </span>
+
+                  <span className="text-sm font-semibold text-foreground">
+          {notasImportadas
+              .reduce(
+                  (total, nota) =>
+                      total +
+                      Number(nota.valorNotaFiscal || 0),
+                  0
+              )
+              .toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL"
+              })}
+        </span>
+                </div>
               </div>
-            </div>
-          </div>
-      )}
+          )}
+      {modo === "pdf" &&
+          editandoIndice !== null &&
+          notaEditando && (
+              <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto pr-2">
+
+                <button
+                    type="button"
+                    onClick={cancelarEdicaoNota}
+                    className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft size={16} />
+                  Voltar para a prévia
+                </button>
+
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Editar NF {notaEditando.numeroNotaFiscal}
+                  </p>
+
+                  <p className="text-xs text-muted-foreground">
+                    A alteração será feita somente nesta importação.
+                  </p>
+                </div>
+
+                <Input
+                    label="Número da nota"
+                    value={notaEditando.numeroNotaFiscal}
+                    onChange={(e) =>
+                        setNotaEditando({
+                          ...notaEditando,
+                          numeroNotaFiscal: e.target.value
+                        })
+                    }
+                />
+
+                <Input
+                    label="Código do cliente"
+                    value={notaEditando.codigoCliente}
+                    onChange={(e) =>
+                        setNotaEditando({
+                          ...notaEditando,
+                          codigoCliente: e.target.value
+                        })
+                    }
+                />
+
+                <Input
+                    label="Nome da empresa"
+                    value={notaEditando.nomeEmpresa}
+                    onChange={(e) =>
+                        setNotaEditando({
+                          ...notaEditando,
+                          nomeEmpresa: e.target.value
+                        })
+                    }
+                />
+
+                <Input
+                    label="Valor da nota (R$)"
+                    value={notaEditando.valorNotaFiscal}
+                    onChange={(e) =>
+                        setNotaEditando({
+                          ...notaEditando,
+                          valorNotaFiscal: e.target.value
+                        })
+                    }
+                />
+
+                <Input
+                    label="Data de emissão"
+                    value={notaEditando.dataEmissao}
+                    onChange={(e) =>
+                        setNotaEditando({
+                          ...notaEditando,
+                          dataEmissao: e.target.value
+                        })
+                    }
+                />
+
+                <div className="border-t border-border pt-4">
+                  <p className="mb-3 text-sm font-semibold text-foreground">
+                    Dados do cliente
+                  </p>
+
+                  <div className="flex flex-col gap-4">
+                    <Input
+                        label="CNPJ"
+                        value={notaEditando.cnpj}
+                        onChange={(e) =>
+                            setNotaEditando({
+                              ...notaEditando,
+                              cnpj: e.target.value
+                            })
+                        }
+                    />
+
+                    <Input
+                        label="Município"
+                        value={notaEditando.municipio}
+                        onChange={(e) =>
+                            setNotaEditando({
+                              ...notaEditando,
+                              municipio: e.target.value
+                            })
+                        }
+                    />
+
+                    <Input
+                        label="Transportadora"
+                        value={notaEditando.transportadora}
+                        onChange={(e) =>
+                            setNotaEditando({
+                              ...notaEditando,
+                              transportadora: e.target.value
+                            })
+                        }
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={salvarEdicaoNota}>
+                  Salvar alterações
+                </Button>
+              </div>
+          )}
     </Modal>
   )
 }

@@ -3,9 +3,7 @@ package com.dev.gestorNF.controller;
 import com.dev.gestorNF.business.NotaFiscalImportacaoService;
 import com.dev.gestorNF.business.NotaFiscalService;
 import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
-import com.dev.gestorNF.business.dto.out.NotaFiscalDTOResponse;
-import com.dev.gestorNF.business.dto.out.NotaFiscalImportacaoDTOResponse;
-import com.dev.gestorNF.business.dto.out.ResultadoGeralDTO;
+import com.dev.gestorNF.business.dto.out.*;
 import com.dev.gestorNF.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -154,17 +152,9 @@ public class NotaFiscalController {
                         + ".pdf";
 
         return ResponseEntity.ok()
-                .header(
-                        "Content-Type",
-                        "application/pdf"
-                )
-                .header(
-                        "Content-Disposition",
-                        "attachment; filename=\""
-                                + nomeArquivo
-                                + "\""
-                )
-                .body(pdf);
+                .header("Content-Type",
+                        "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"" + nomeArquivo + "\"").body(pdf);
     }
     @Operation(summary = "Relatório mensal", description = "Relatório mensal")
     @ApiResponse(responseCode = "200" , description = "Relatório exportado com sucesso")
@@ -175,18 +165,32 @@ public class NotaFiscalController {
     public ResponseEntity<byte[]> gerarRelatorioMensal(@RequestHeader(name = "Authorization", required = false) String token,
                                                        @RequestParam("mes") YearMonth mes,
                                                        @RequestParam(value = "idVendedor", required = false) Long idVendedor) {
-
-        byte[] pdf =
-                notaFiscalService.gerarRelatorioMensal(token, mes, idVendedor);
+        byte[] pdf = notaFiscalService.gerarRelatorioMensal(token, mes, idVendedor);
         String nomeArquivo = "relatorio-" + mes + ".pdf";
 
-        return ResponseEntity.ok().header(
-                "Content-Type", "application/pdf")
+        return ResponseEntity.ok().header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"" + nomeArquivo + "\"").body(pdf);
     }
+
     @PostMapping(value = "/importar/ler", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<NotaFiscalImportacaoDTOResponse> lerNotaFiscal(@RequestPart("arquivo") MultipartFile arquivo) {
 
         return ResponseEntity.ok(notaFiscalImportacaoService.importar(arquivo));
+    }
+
+    @PostMapping(value = "/importar/ler-lote", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<NotaFiscalImportacaoLoteDTOResponse>> lerNotasFiscais(
+            @RequestPart("arquivos") List<MultipartFile> arquivos) {
+
+        return ResponseEntity.ok(notaFiscalImportacaoService.importarLote(arquivos));
+    }
+    @PostMapping("/importar/confirmar-lote")
+    public ResponseEntity<List<NotaFiscalImportacaoResultadoDTOResponse>> confirmarImportacaoLote(
+            @RequestHeader("Authorization") String token,
+            @RequestBody List<NotaFiscalDTORequest> notas) {
+
+        return ResponseEntity.ok(
+                notaFiscalService.cadastrarNotasEmLote(token, notas)
+        );
     }
 }

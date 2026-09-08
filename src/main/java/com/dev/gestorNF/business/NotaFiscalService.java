@@ -1,10 +1,7 @@
 package com.dev.gestorNF.business;
 
 import com.dev.gestorNF.business.dto.in.NotaFiscalDTORequest;
-import com.dev.gestorNF.business.dto.out.ClienteDTOResponse;
-import com.dev.gestorNF.business.dto.out.NotaFiscalDTOResponse;
-import com.dev.gestorNF.business.dto.out.ResultadoGeralDTO;
-import com.dev.gestorNF.business.dto.out.ResultadoGeralVendedorDTO;
+import com.dev.gestorNF.business.dto.out.*;
 import com.dev.gestorNF.business.mapper.NotaFiscalConverter;
 import com.dev.gestorNF.infrastructure.entity.out.NotaFiscalEntity;
 import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
@@ -26,6 +23,7 @@ import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -91,6 +89,50 @@ public class NotaFiscalService {
         NotaFiscalEntity notaFiscalEntity = notaFiscalConverter.paraNotaFiscalEntity(notaFiscalDTORequest, vendedorEntity, nomeEmpresaResolvido);
 
         return notaFiscalConverter.paraNotaFiscalDTOResponse(notaFiscalRepository.save(notaFiscalEntity));
+    }
+    public List<NotaFiscalImportacaoResultadoDTOResponse> cadastrarNotasEmLote(
+            String token,
+            List<NotaFiscalDTORequest> notas) {
+
+        if (notas == null || notas.isEmpty()) {
+            throw new RuntimeException("Nenhuma nota fiscal foi informada");
+        }
+
+        if (notas.size() > 50) {
+            throw new RuntimeException("É permitido importar no máximo 50 notas por vez");
+        }
+
+        List<NotaFiscalImportacaoResultadoDTOResponse> resultados = new ArrayList<>();
+
+        for (int i = 0; i < notas.size(); i++) {
+            NotaFiscalDTORequest nota = notas.get(i);
+
+            try {
+                cadastrarNotaFiscal(token, nota);
+
+                resultados.add(
+                        NotaFiscalImportacaoResultadoDTOResponse.builder()
+                                .indice(i)
+                                .numeroNotaFiscal(nota.getNumeroNotaFiscal())
+                                .importada(true)
+                                .erro(null)
+                                .build()
+                );
+
+            } catch (Exception e) {
+
+                resultados.add(
+                        NotaFiscalImportacaoResultadoDTOResponse.builder()
+                                .indice(i)
+                                .numeroNotaFiscal(nota.getNumeroNotaFiscal())
+                                .importada(false)
+                                .erro(e.getMessage())
+                                .build()
+                );
+            }
+        }
+
+        return resultados;
     }
     public NotaFiscalDTOResponse editarNotaFiscal(String token, Long idNota, NotaFiscalDTORequest notaFiscalDTORequest) {
 
@@ -194,7 +236,10 @@ public class NotaFiscalService {
                     .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
         return vendedorEntity.getNotasFiscais()
                     .stream()
-                    .filter(nf -> YearMonth.from(nf.getDataVenda()).equals(yearMonth))
+                .filter(nf ->
+                        nf.getDataVenda() != null &&
+                                YearMonth.from(nf.getDataVenda()).equals(yearMonth)
+                )
                     .mapToDouble(NotaFiscalEntity::getValorNotaFiscal)
                     .sum();
     }
@@ -741,7 +786,8 @@ public class NotaFiscalService {
             tabela.addCell(new PdfPCell(new Phrase(nota.getNomeEmpresa(), font)));
 
             tabela.addCell(
-                    new PdfPCell(new Phrase(nota.getDataVenda().format(dataFormatter), font)));
+                    new PdfPCell(
+                            new Phrase(nota.getDataVenda() != null ? nota.getDataVenda().format(dataFormatter) : "-", font)));
 
             tabela.addCell(
                     new PdfPCell(new Phrase(formatarMoeda(nota.getValorNotaFiscal()), font)));
