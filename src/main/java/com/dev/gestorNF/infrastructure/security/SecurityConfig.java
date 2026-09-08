@@ -55,7 +55,6 @@ public class SecurityConfig {
                             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                             .requestMatchers(HttpMethod.POST, "/usuario").permitAll()
                             .requestMatchers(HttpMethod.POST, "/usuario/login").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/usuario/endereco/**").permitAll()
                             .requestMatchers(HttpMethod.GET, "/usuario/verificar-email").permitAll()
                             .requestMatchers(HttpMethod.POST, "/usuario/esqueci-senha").permitAll()
                             .requestMatchers(HttpMethod.POST, "/usuario/redefinir-senha").permitAll()
@@ -88,7 +87,10 @@ public class SecurityConfig {
                 "OPTIONS"
         ));
 
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type"
+        ));
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
