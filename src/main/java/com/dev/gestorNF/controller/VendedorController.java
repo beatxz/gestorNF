@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +31,8 @@ public class VendedorController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PostMapping
-    public ResponseEntity<VendedorDTOResponse> cadastrarVendedor(@RequestHeader(name = "Authorization",required = false) String token,
-                                                                @RequestBody VendedorDTORequest vendedorDTORequest){
+    public ResponseEntity<VendedorDTOResponse> cadastrarVendedor(@RequestHeader(name = "Authorization") String token,
+                                                                 @Valid @RequestBody VendedorDTORequest vendedorDTORequest){
         return ResponseEntity.ok(vendedorService.cadastroVendedor(token,vendedorDTORequest));
     }
     @Operation(summary = "Deletar vendedor", description = "Deleta vendedor")
@@ -40,8 +41,8 @@ public class VendedorController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarVendedor(@RequestHeader(name = "Authorization", required = false) String token,
-                                                @PathVariable("id") Long idVendedor){
+    public ResponseEntity<Void> deletarVendedor(@RequestHeader(name = "Authorization") String token,
+                                                 @PathVariable("id") Long idVendedor){
         vendedorService.deletaVendedor(token,idVendedor);
         return ResponseEntity.ok().build();
     }
@@ -51,13 +52,13 @@ public class VendedorController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @GetMapping("/{id}")
-    public ResponseEntity<VendedorDTOResponse> buscaVendedorId(@RequestHeader(name = "Authorization",required = false) String token,
+    public ResponseEntity<VendedorDTOResponse> buscaVendedorId(@RequestHeader(name = "Authorization") String token,
                                                                @PathVariable ("id") Long idVendedor ){
         return ResponseEntity.ok(vendedorService.buscarVendedorPorId(token,idVendedor));
     }
     @GetMapping
     public ResponseEntity<List<VendedorDTOResponse>> buscarVendedores(
-            @RequestHeader(name = "Authorization", required = false) String token) {
+            @RequestHeader(name = "Authorization") String token) {
 
         return ResponseEntity.ok(vendedorService.buscarVendedoresDoUsuario(token)
         );
@@ -68,7 +69,7 @@ public class VendedorController {
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @PatchMapping
-    public ResponseEntity<VendedorDTOResponse> updateComissao(@RequestHeader(name = "Authorization",required = false) String token,
+    public ResponseEntity<VendedorDTOResponse> updateComissao(@RequestHeader(name = "Authorization") String token,
                                                               @RequestParam("id") Long idVendedor,
                                                               @RequestBody Double comissao){
         return ResponseEntity.ok(vendedorService.updateComissao(token, idVendedor,comissao));

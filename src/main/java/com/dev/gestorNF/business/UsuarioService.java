@@ -1,5 +1,6 @@
 package com.dev.gestorNF.business;
 
+import com.dev.gestorNF.business.dto.in.LoginDTORequest;
 import com.dev.gestorNF.business.dto.in.RedefinirSenhaDTORequest;
 import com.dev.gestorNF.business.dto.in.UsuarioDTORequest;
 import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
@@ -155,9 +156,9 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-    public String autenticarUsuario(UsuarioDTORequest usuarioDTORequest) {
+    public String autenticarUsuario(LoginDTORequest loginDTORequest) {
         UsuarioEntity usuario = usuarioRepository
-                .findByEmail(usuarioDTORequest.getEmail())
+                .findByEmail( loginDTORequest.getEmail())
                 .orElse(null);
 
         if (usuario == null) {
@@ -181,16 +182,10 @@ public class UsuarioService {
 
             Authentication authentication =
                     authenticationManager.authenticate(
-                            new UsernamePasswordAuthenticationToken(
-                                    usuarioDTORequest.getEmail(),
-                                    usuarioDTORequest.getSenha()
-                            )
-                    );
+                            new UsernamePasswordAuthenticationToken(loginDTORequest.getEmail(), loginDTORequest.getSenha()));
 
             if (!usuario.isEmailVerificado()) {
-                throw new UnauthorizedException(
-                        "Email ainda não foi verificado"
-                );
+                throw new UnauthorizedException("Email ainda não foi verificado");
             }
 
             usuario.setTentativasLoginFalhas(0);
@@ -198,14 +193,11 @@ public class UsuarioService {
 
             usuarioRepository.save(usuario);
 
-            return "Bearer " +
-                    jwtUtil.generateToken(authentication.getName());
+            return "Bearer " + jwtUtil.generateToken(authentication.getName());
 
         } catch (BadCredentialsException e) {
             registrarTentativaLoginFalha(usuario);
-            throw new UnauthorizedException(
-                    "Usuário ou senha inválidos"
-            );
+            throw new UnauthorizedException("Usuário ou senha inválidos");
         }
     }
     public UsuarioDTOResponse atualizarComissaoTotal(String token, Double comissaoTotal) {
@@ -243,15 +235,6 @@ public class UsuarioService {
         usuarioRepository.delete(usuarioEntity);
     }
 
-    public UsuarioDTOResponse buscaUsuarioEmail(String email) {
-        try {
-           return usuarioConverter.paraUsuarioDTOResponse
-                    (usuarioRepository.findByEmail(email)
-                            .orElseThrow(() -> new RuntimeException("Usuario não encontrado")));
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Usuario não encontrado");
-        }
-    }
     private void registrarTentativaLoginFalha(UsuarioEntity usuario) {
 
         int tentativas =

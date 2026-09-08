@@ -24,7 +24,7 @@ export default function NotaDetalheModal({ open, onClose, nota, vendedor, onExcl
     { rotulo: "Empresa", valor: nota.nomeEmpresa },
     { rotulo: "Valor", valor: formatarMoeda(nota.valorNotaFiscal) },
     { rotulo: "Data da venda", valor: formatarData(nota.dataVenda) },
-    { rotulo: "Vendedor", valor: vendedor ? `${vendedor.nome} (ID ${vendedor.id})` : "-" },
+    { rotulo: "Vendedor", valor: vendedor?.nome || "-" },
   ]
 
   async function handleExcluir() {
