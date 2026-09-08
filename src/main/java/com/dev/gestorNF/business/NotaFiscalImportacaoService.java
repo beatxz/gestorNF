@@ -1,6 +1,7 @@
 package com.dev.gestorNF.business;
 
 import com.dev.gestorNF.business.dto.out.NotaFiscalImportacaoDTOResponse;
+import com.dev.gestorNF.business.dto.out.NotaFiscalImportacaoLoteDTOResponse;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -10,6 +11,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,19 +40,76 @@ public class NotaFiscalImportacaoService {
         }
     }
     public NotaFiscalImportacaoDTOResponse importar(MultipartFile arquivo) {
-
         String texto = extrairTexto(arquivo);
 
+        Integer numeroNota = extrairNumeroNota(texto);
+        String codigoCliente = extrairCodigoCliente(texto);
+        String nomeEmpresa = extrairNomeEmpresa(texto);
+        Double valorTotal = extrairValorTotal(texto);
+        LocalDate dataEmissao = extrairDataEmissao(texto);
+
+        if (numeroNota == null ||
+                nomeEmpresa == null || nomeEmpresa.isBlank() ||
+                valorTotal == null ||
+                dataEmissao == null) {
+
+            throw new RuntimeException(
+                    "O arquivo não parece ser uma nota fiscal válida"
+            );
+        }
+
         return NotaFiscalImportacaoDTOResponse.builder()
-                .numeroNotaFiscal(extrairNumeroNota(texto))
-                .codigoCliente(extrairCodigoCliente(texto))
-                .nomeEmpresa(extrairNomeEmpresa(texto))
-                .valorNotaFiscal(extrairValorTotal(texto))
-                .dataEmissao(extrairDataEmissao(texto))
+                .numeroNotaFiscal(numeroNota)
+                .codigoCliente(codigoCliente)
+                .nomeEmpresa(nomeEmpresa)
+                .valorNotaFiscal(valorTotal)
+                .dataEmissao(dataEmissao)
                 .cnpj(extrairCnpjCliente(texto))
                 .municipio(extrairMunicipio(texto))
                 .transportadora(extrairTransportadora(texto))
                 .build();
+    }
+    public List<NotaFiscalImportacaoLoteDTOResponse> importarLote(
+            List<MultipartFile> arquivos) {
+
+        if (arquivos == null || arquivos.isEmpty()) {
+            throw new RuntimeException("Selecione pelo menos um arquivo PDF");
+        }
+
+        if (arquivos.size() > 50) {
+            throw new RuntimeException("É permitido importar no máximo 50 notas por vez");
+        }
+
+        List<NotaFiscalImportacaoLoteDTOResponse> resultado = new ArrayList<>();
+
+        for (MultipartFile arquivo : arquivos) {
+
+            try {
+                NotaFiscalImportacaoDTOResponse nota = importar(arquivo);
+
+                resultado.add(
+                        NotaFiscalImportacaoLoteDTOResponse.builder()
+                                .nomeArquivo(arquivo.getOriginalFilename())
+                                .nota(nota)
+                                .valida(true)
+                                .erro(null)
+                                .build()
+                );
+
+            } catch (Exception e) {
+
+                resultado.add(
+                        NotaFiscalImportacaoLoteDTOResponse.builder()
+                                .nomeArquivo(arquivo.getOriginalFilename())
+                                .nota(null)
+                                .valida(false)
+                                .erro(e.getMessage())
+                                .build()
+                );
+            }
+        }
+
+        return resultado;
     }
     private Integer extrairNumeroNota(String texto) {
         Matcher matcher = Pattern.compile("N[°º]\\s*(\\d+)\\s+FL").matcher(texto);

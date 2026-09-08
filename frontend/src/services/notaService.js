@@ -130,3 +130,30 @@ export async function lerNotaPdf(arquivo) {
 
   return data
 }
+export async function lerNotasPdf(arquivos) {
+  const formData = new FormData()
+
+  arquivos.forEach((arquivo) => {
+    formData.append("arquivos", arquivo)
+  })
+
+  const { data } = await api.post(
+      "/notaFiscal/importar/ler-lote",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      }
+  )
+
+  return data
+}
+export async function cadastrarNotasEmLote(notas) {
+  const { data } = await api.post(
+      "/notaFiscal/importar/confirmar-lote",
+      notas
+  )
+
+  return data
+}
