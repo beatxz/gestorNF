@@ -32,9 +32,15 @@ export async function redefinirSenha({ token, novaSenha }) {
 }
 
 // Deletar usuário -> DELETE /usuario
-export async function deletarUsuario(email) {
-  const { data } = await api.delete("/usuario")
-  return data
+export async function deletarUsuario(senha) {
+  await api.delete("/usuario", {
+    data: {
+      senha,
+    },
+
+
+    skipAutoLogout: true,
+  })
 }
 // Busca os dados do usuário logado
 export async function buscarUsuarioLogado() {

@@ -90,9 +90,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
 
         String path = request.getServletPath();
+        String method = request.getMethod();
 
-        return path.equals("/usuario/login")
-                || path.equals("/usuario")
+        return (path.equals("/usuario") && method.equalsIgnoreCase("POST"))
+                || path.equals("/usuario/login")
                 || path.equals("/usuario/esqueci-senha")
                 || path.equals("/usuario/redefinir-senha")
                 || path.equals("/usuario/verificar-email");

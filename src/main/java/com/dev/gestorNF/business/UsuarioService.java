@@ -1,5 +1,6 @@
 package com.dev.gestorNF.business;
 
+import com.dev.gestorNF.business.dto.in.ExcluirContaDTORequest;
 import com.dev.gestorNF.business.dto.in.LoginDTORequest;
 import com.dev.gestorNF.business.dto.in.RedefinirSenhaDTORequest;
 import com.dev.gestorNF.business.dto.in.UsuarioDTORequest;
@@ -9,7 +10,10 @@ import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import com.dev.gestorNF.infrastructure.exception.ConflictException;
 import com.dev.gestorNF.infrastructure.exception.TooManyRequestsException;
 import com.dev.gestorNF.infrastructure.exception.UnauthorizedException;
+import com.dev.gestorNF.infrastructure.repository.ClienteRepository;
+import com.dev.gestorNF.infrastructure.repository.NotaFiscalRepository;
 import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
+import com.dev.gestorNF.infrastructure.repository.VendedorRepository;
 import com.dev.gestorNF.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,6 +22,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -32,6 +37,9 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    private final ClienteRepository clienteRepository;
+    private final NotaFiscalRepository notaFiscalRepository;
+    private final VendedorRepository vendedorRepository;
 
 
     public boolean verificaEmailExiste(String email){
@@ -53,20 +61,16 @@ public class UsuarioService {
 
         emailExiste(usuarioDTORequest.getEmail());
 
-        usuarioDTORequest.setSenha(
-                passwordEncoder.encode(usuarioDTORequest.getSenha())
-        );
+        usuarioDTORequest.setSenha(passwordEncoder.encode(usuarioDTORequest.getSenha()));
 
-        UsuarioEntity usuarioEntity =
-                usuarioConverter.paraUsuarioEntity(usuarioDTORequest);
+        UsuarioEntity usuarioEntity = usuarioConverter.paraUsuarioEntity(usuarioDTORequest);
 
         String tokenGerado = UUID.randomUUID().toString();
 
         usuarioEntity.setTokenVerificacao(tokenGerado);
         usuarioEntity.setEmailVerificado(false);
 
-        UsuarioEntity usuarioSalvo =
-                usuarioRepository.save(usuarioEntity);
+        UsuarioEntity usuarioSalvo = usuarioRepository.save(usuarioEntity);
 
         emailService.enviarEmailVerificacao(usuarioSalvo.getEmail(), usuarioSalvo.getNome(), usuarioSalvo.getTokenVerificacao());
 
@@ -116,19 +120,13 @@ public class UsuarioService {
 
         usuario.setTokenRecuperacaoSenha(token);
         usuario.setExpiracaoTokenRecuperacao(
-                agora.plusMinutes(30)
-        );
+                agora.plusMinutes(30));
 
         usuario.setTentativasRecuperacao(
-                tentativas + 1
-        );
+                tentativas + 1);
 
         usuarioRepository.save(usuario);
-        emailService.enviarEmailRecuperacaoSenha(
-                usuario.getEmail(),
-                usuario.getNome(),
-                token
-        );
+        emailService.enviarEmailRecuperacaoSenha(usuario.getEmail(), usuario.getNome(), token);
 
     }
     public void redefinirSenha(RedefinirSenhaDTORequest request) {
@@ -158,8 +156,7 @@ public class UsuarioService {
 
     public String autenticarUsuario(LoginDTORequest loginDTORequest) {
         UsuarioEntity usuario = usuarioRepository
-                .findByEmail( loginDTORequest.getEmail())
-                .orElse(null);
+                .findByEmail( loginDTORequest.getEmail()).orElse(null);
 
         if (usuario == null) {
             throw new UnauthorizedException("Usuário ou senha inválidos");
@@ -226,21 +223,33 @@ public class UsuarioService {
 
         return usuarioConverter.paraUsuarioDTOResponse(usuario);
     }
-    public void deletarUsuario(String token) {
+    @Transactional
+    public void deletarUsuario(String token, ExcluirContaDTORequest request) {
 
         String email = jwtUtil.extrairEmailToken(token.substring(7));
-        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
+
+        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        usuarioRepository.delete(usuarioEntity);
+        if (!passwordEncoder.matches(request.getSenha(), usuario.getSenha())) {
+            throw new UnauthorizedException("Senha atual incorreta");
+        }
+
+        Long usuarioId = usuario.getId();
+
+        clienteRepository.deleteByVendedorUsuarioId(usuarioId);
+
+        notaFiscalRepository.deleteByVendedorUsuarioId(usuarioId);
+
+        vendedorRepository.deleteByUsuarioId(usuarioId);
+
+        usuarioRepository.delete(usuario);
     }
 
     private void registrarTentativaLoginFalha(UsuarioEntity usuario) {
 
         int tentativas =
-                usuario.getTentativasLoginFalhas() == null
-                        ? 0
-                        : usuario.getTentativasLoginFalhas();
+                usuario.getTentativasLoginFalhas() == null ? 0 : usuario.getTentativasLoginFalhas();
 
         tentativas++;
 
@@ -250,8 +259,7 @@ public class UsuarioService {
             usuario.setBloqueadoAte(LocalDateTime.now().plusMinutes(15));
 
             usuarioRepository.save(usuario);
-            throw new TooManyRequestsException(
-                    "Muitas tentativas de login. Tente novamente em 15 minutos.");
+            throw new TooManyRequestsException("Muitas tentativas de login. Tente novamente em 15 minutos.");
         }
 
         usuarioRepository.save(usuario);

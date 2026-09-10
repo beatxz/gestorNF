@@ -94,19 +94,7 @@ public class ClienteService {
 
         return clienteConverter.paraClienteDTOResponse(clienteRepository.save(clienteEntity));
     }
-    public ClienteEntity buscarOuCriarCliente(ClienteDTORequest clienteDTORequest, VendedorEntity vendedor) {
-        ClienteEntity clienteEntity = clienteRepository.findByCodigoCliente(clienteDTORequest.getCodigoCliente())
-                .orElseGet(() -> clienteConverter.paraClienteEntity(clienteDTORequest, vendedor));
 
-        clienteEntity.setNomeEmpresa(clienteDTORequest.getNomeEmpresa());
-        clienteEntity.setCnpj(clienteDTORequest.getCnpj());
-        clienteEntity.setMunicipio(clienteDTORequest.getMunicipio());
-        clienteEntity.setTransportadora(clienteDTORequest.getTransportadora());
-        clienteEntity.setVendedor(vendedor);
-        clienteEntity.setAtivo(true);
-
-        return clienteRepository.save(clienteEntity);
-    }
     public ClienteDTOResponse vincularClienteDaNota(
             String token,
             VendedorEntity vendedor,

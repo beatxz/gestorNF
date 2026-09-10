@@ -44,6 +44,7 @@ api.interceptors.request.use((config) => {
 // limpamos o token e mandamos o usuário para o login.
 api.interceptors.response.use(
     (response) => response,
+
     (error) => {
       const status = error?.response?.status
       const caminhoAtual = window.location.pathname
@@ -54,16 +55,21 @@ api.interceptors.response.use(
           caminhoAtual.includes("/esqueci-senha") ||
           caminhoAtual.includes("/redefinir-senha")
 
-      if ((status === 401 && !rotaPublica)) {
-        clearToken()
+      const ignorarLogoutAutomatico =
+          error?.config?.skipAutoLogout === true
 
+      if (
+          status === 401 &&
+          !rotaPublica &&
+          !ignorarLogoutAutomatico
+      ) {
+        clearToken()
         window.location.href = "/login"
       }
 
       return Promise.reject(error)
     },
 )
-
 /**
  * Traduz um erro do axios em uma mensagem amigável (sem detalhes técnicos).
  */
@@ -75,9 +81,14 @@ export function getFriendlyError(error, fallback = "Algo deu errado. Tente novam
     const mensagemBackend =
         (typeof data === "string" && data.trim()) ||
         data?.message ||
+        data?.menssage ||
         data?.error
 
-    if (status === 401) return "Sua sessão expirou. Faça login novamente."
+    if (status === 401) {
+      if (error?.config?.skipAutoLogout) {return mensagemBackend || "Senha atual incorreta."
+      }
+      return "Sua sessão expirou. Faça login novamente."
+    }
     if (status === 403) return "Você não tem permissão para realizar esta operação."
     if (status === 404) return "Recurso não encontrado."
     if (status === 429) return mensagemBackend || "Muitas tentativas. Aguarde alguns minutos e tente novamente."

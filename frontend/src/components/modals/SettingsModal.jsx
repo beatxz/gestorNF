@@ -261,6 +261,7 @@ function AbaDeletarVendedor({ vendedores, onSucesso }) {
 
 /* --- Deletar usuário --- */
 function AbaDeletarUsuario() {
+    const [senha, setSenha] = useState("")
     const [confirmando, setConfirmando] = useState(false)
     const [excluindo, setExcluindo] = useState(false)
     const toast = useToast()
@@ -270,7 +271,7 @@ function AbaDeletarUsuario() {
         setExcluindo(true)
 
         try {
-            await deletarUsuario()
+            await deletarUsuario(senha)
 
             toast.sucesso("Conta excluída. Você será redirecionado.")
 
@@ -296,25 +297,35 @@ function AbaDeletarUsuario() {
         <div className="flex flex-col gap-4">
 
             <div className="rounded-lg bg-[var(--color-destructive)]/10 p-3 text-sm text-[var(--color-destructive)]">
-                Esta ação é permanente e encerrará sua sessão.
-                Todos os vendedores e notas fiscais da sua conta também serão excluídos.
+                Esta ação é permanente. Sua conta, vendedores, clientes e notas fiscais
+                serão excluídos definitivamente.
             </div>
+            <Input
+                id="senha-exclusao"
+                label="Senha atual"
+                type="password"
+                placeholder="Digite sua senha para confirmar"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                autoComplete="current-password"
+            />
 
             <Button
                 variant="danger"
                 className="self-end"
+                disabled={!senha.trim()}
                 onClick={() => setConfirmando(true)}
             >
                 <Trash2 size={16} />
-                Deletar usuário
+                Excluir minha conta
             </Button>
 
             <ConfirmDialog
                 open={confirmando}
                 onClose={() => setConfirmando(false)}
                 onConfirm={handleExcluir}
-                title="Deletar usuário"
-                message="Tem certeza que deseja excluir sua conta? Todos os vendedores e notas fiscais serão excluídos permanentemente. Esta ação não pode ser desfeita."
+                title="Excluir minha conta"
+                message="Tem certeza que deseja excluir sua conta? Todos os vendedores, notas fiscais e clientes serão excluídos permanentemente. Esta ação não pode ser desfeita."
                 confirmLabel="Deletar conta"
                 loading={excluindo}
             />

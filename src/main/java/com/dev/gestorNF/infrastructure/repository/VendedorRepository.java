@@ -14,4 +14,6 @@ public interface VendedorRepository extends JpaRepository<VendedorEntity,Long> {
 
     Optional<VendedorEntity> findByIdVendedorAndUsuarioId(Long idVendedor, Long usuarioId);
 
+    void deleteByUsuarioId(Long usuarioId);
+
 }
