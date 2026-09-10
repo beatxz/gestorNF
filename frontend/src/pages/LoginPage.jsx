@@ -168,6 +168,21 @@ export default function LoginPage() {
         </Link>
 
       </p>
+      <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <Link
+            to="/politica-de-privacidade"
+            className="hover:text-accent hover:underline"
+        >
+          Política de Privacidade
+        </Link>
+
+        <Link
+            to="/termos-de-uso"
+            className="hover:text-accent hover:underline"
+        >
+          Termos de Uso
+        </Link>
+      </div>
 
     </AuthLayout>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Percent, UserMinus, Trash2 } from "lucide-react"
+import { Percent, UserMinus, Trash2, FileText  } from "lucide-react"
 import Modal from "../ui/Modal.jsx"
 import Input from "../ui/Input.jsx"
 import Button from "../ui/Button.jsx"
@@ -9,6 +9,7 @@ import {deletarUsuario, buscarUsuarioLogado, alterarComissaoTotal,} from "../../
 import { getFriendlyError } from "../../services/api.js"
 import { useToast } from "../../hooks/useToast.jsx"
 import { useAuth } from "../../hooks/useAuth.jsx"
+import { Link } from "react-router-dom"
 
 /**
  * Central de configurações (abre pelo ícone de engrenagem).
@@ -22,25 +23,33 @@ export default function SettingsModal({ open, onClose, vendedores, onVendedoresM
       { id: "comissao", rotulo: "Comissão vendedor", icon: Percent },
     { id: "delVendedor", rotulo: "Deletar vendedor", icon: UserMinus },
     { id: "delUsuario", rotulo: "Deletar usuário", icon: Trash2 },
+      { id: "legal", rotulo: "Privacidade", icon: FileText },
+
   ]
 
   return (
     <Modal open={open} onClose={onClose} title="Configurações" maxWidth="max-w-lg">
       {/* Navegação por abas */}
-      <div className="mb-5 flex gap-1 rounded-lg bg-muted p-1">
-        {abas.map((a) => (
-          <button
-            key={a.id}
-            onClick={() => setAba(a.id)}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-              aba === a.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <a.icon size={15} />
-            <span className="hidden sm:inline">{a.rotulo}</span>
-          </button>
-        ))}
-      </div>
+        <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 sm:grid-cols-3">
+            {abas.map((a) => (
+                <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setAba(a.id)}
+                    className={`flex min-w-0 items-center justify-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-colors ${
+                        aba === a.id
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    <a.icon size={15} className="shrink-0" />
+
+                    <span className="truncate">
+        {a.rotulo}
+      </span>
+                </button>
+            ))}
+        </div>
 
         {aba === "comissaoGeral" && (
             <AbaComissaoGeral />
@@ -52,6 +61,7 @@ export default function SettingsModal({ open, onClose, vendedores, onVendedoresM
         <AbaDeletarVendedor vendedores={vendedores} onSucesso={onVendedoresMudaram} />
       )}
       {aba === "delUsuario" && <AbaDeletarUsuario />}
+        {aba === "legal" && <AbaLegal />}
     </Modal>
   )
 }
@@ -333,8 +343,51 @@ function AbaDeletarUsuario() {
         </div>
     )
 }
+/* --- Privacidade e documentos legais --- */
+function AbaLegal() {
+    return (
+        <div className="flex flex-col gap-4">
+            <div>
+                <h3 className="text-sm font-semibold text-foreground">
+                    Privacidade e documentos
+                </h3>
 
-/* --- Seletor de vendedor reutilizável --- */
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Consulte os documentos que explicam as regras de utilização do
+                    GestorNF e como seus dados são tratados.
+                </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+                <Link
+                    to="/politica-de-privacidade"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                    Política de Privacidade
+                </Link>
+
+                <Link
+                    to="/termos-de-uso"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                    Termos de Uso
+                </Link>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+                Contato para assuntos de privacidade:
+                {" "}
+                <strong className="text-foreground">
+                    gestordenotasfiscais@gmail.com
+                </strong>
+            </p>
+        </div>
+    )
+}/* --- Seletor de vendedor reutilizável --- */
 function SelectVendedor({ value, onChange, vendedores }) {
   return (
     <div className="flex flex-col gap-1.5">
