@@ -117,15 +117,19 @@ public class VendedorService {
     private void validarComissao(UsuarioEntity usuario, Double comissaoVendedor) {
 
         if (comissaoVendedor == null || comissaoVendedor < 0) {
-            throw new RuntimeException("Informe uma comissão válida");
+            throw new IllegalArgumentException("Informe uma comissão válida");
         }
 
         if (usuario.getComissaoTotal() == null) {
-            throw new RuntimeException("Configure primeiro a comissão total da empresa");
+            throw new IllegalArgumentException(
+                    "Configure primeiro a comissão total da empresa"
+            );
         }
 
         if (comissaoVendedor > usuario.getComissaoTotal()) {
-            throw new RuntimeException("A comissão do vendedor não pode ser maior que a comissão total da empresa");
+            throw new IllegalArgumentException(
+                    "A comissão do vendedor não pode ser maior que a comissão total da empresa"
+            );
         }
     }
 }

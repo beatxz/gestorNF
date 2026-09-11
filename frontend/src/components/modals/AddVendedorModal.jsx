@@ -29,9 +29,22 @@ export default function AddVendedorModal({ open, onClose, onSucesso }) {
 
   function validar() {
     const novos = {}
-    if (!nome.trim()) novos.nome = "Informe o nome."
-    if (comissao === "" || Number.isNaN(Number(comissao))) novos.comissao = "Informe a comissão."
-    else if (Number(comissao) < 0) novos.comissao = "A comissão não pode ser negativa."
+
+    const nomeLimpo = nome.trim()
+
+    if (!nomeLimpo) {
+      novos.nome = "Informe o nome."
+    } else if (nomeLimpo.length < 2) {
+      novos.nome = "O nome deve ter pelo menos 2 caracteres."
+    } else if (nomeLimpo.length > 100) {
+      novos.nome = "O nome deve ter no máximo 100 caracteres."
+    }
+
+    if (comissao === "" || Number.isNaN(Number(comissao))) {
+      novos.comissao = "Informe a comissão."
+    } else if (Number(comissao) < 0) {
+      novos.comissao = "A comissão não pode ser negativa."
+    }
     setErros(novos)
     return Object.keys(novos).length === 0
   }
@@ -49,6 +62,8 @@ export default function AddVendedorModal({ open, onClose, onSucesso }) {
       const mensagemBackend =
           error.response?.data?.message ||
           error.response?.data?.mensagem ||
+          error.response?.data?.menssage ||
+          error.response?.data?.error ||
           error.response?.data
 
       if (

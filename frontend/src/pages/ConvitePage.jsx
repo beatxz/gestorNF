@@ -284,25 +284,25 @@ export default function ConvitePage() {
 
                     <span className="text-xs leading-relaxed text-muted-foreground">
             Li e concordo com os{" "}
-                        <Link
-                            to="/termos-de-uso"
+                        <a
+                            href={`/termos-de-uso?origem=convite&token=${encodeURIComponent(token)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-medium text-accent hover:underline"
                             onClick={(event) => event.stopPropagation()}
                         >
               Termos de Uso
-            </Link>{" "}
+            </a>{" "}
                         e declaro estar ciente da{" "}
-                        <Link
-                            to="/politica-de-privacidade"
+                        <a
+                            href={`/politica-de-privacidade?origem=convite&token=${encodeURIComponent(token)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-medium text-accent hover:underline"
                             onClick={(event) => event.stopPropagation()}
                         >
               Política de Privacidade
-            </Link>
+            </a>
             .
           </span>
                 </label>
