@@ -4,7 +4,6 @@ import com.dev.gestorNF.business.UsuarioService;
 import com.dev.gestorNF.business.dto.in.ExcluirContaDTORequest;
 import com.dev.gestorNF.business.dto.in.LoginDTORequest;
 import com.dev.gestorNF.business.dto.in.RedefinirSenhaDTORequest;
-import com.dev.gestorNF.business.dto.in.UsuarioDTORequest;
 import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
 import com.dev.gestorNF.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,14 +25,14 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    @Operation(summary = "Salvar usuário", description = "Cria um novo usuário")
-    @ApiResponse(responseCode = "200", description = "usuário salvo com sucesso")
-    @ApiResponse(responseCode = "400", description = "usuário já cadastrado")
-    @ApiResponse(responseCode = "500", description = "Erro de servidor")
-    @PostMapping
-    public ResponseEntity<UsuarioDTOResponse> salvarUsuario(@Valid @RequestBody UsuarioDTORequest usuarioDTORequest) {
-        return ResponseEntity.ok(usuarioService.salvarUsuario(usuarioDTORequest));
-    }
+//    @Operation(summary = "Cadastro usuário", description = "Cadastra um novo usuário")
+//    @ApiResponse(responseCode = "200", description = "usuário salvo com sucesso")
+//    @ApiResponse(responseCode = "400", description = "usuário já cadastrado")
+//    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+//    @PostMapping
+//    public ResponseEntity<UsuarioDTOResponse> salvarUsuario(@Valid @RequestBody UsuarioDTORequest usuarioDTORequest) {
+//        return ResponseEntity.ok(usuarioService.salvarUsuario(usuarioDTORequest));
+//    }
     @Operation(summary = "Login usuário", description = "Faz o login do usuário")
     @ApiResponse(responseCode = "200", description = "Login efetuado sucesso")
     @ApiResponse(responseCode = "400", description = "Usuário não cadastrado")

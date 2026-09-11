@@ -4,6 +4,7 @@ package com.dev.gestorNF.business.mapper;
 import com.dev.gestorNF.business.dto.in.UsuarioDTORequest;
 import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
 import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
+import com.dev.gestorNF.infrastructure.entity.out.UsuarioRole;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public class UsuarioConverter {
                 .nome(usuarioDTORequest.getNome())
                 .senha(usuarioDTORequest.getSenha())
                 .emailVerificado(false)
+                .role(UsuarioRole.USER)
                 .build();
     }
 
