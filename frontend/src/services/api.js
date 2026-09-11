@@ -49,11 +49,14 @@ api.interceptors.response.use(
       const status = error?.response?.status
       const caminhoAtual = window.location.pathname
 
-      const rotaPublica =
-          caminhoAtual.includes("/login") ||
-          caminhoAtual.includes("/cadastro") ||
-          caminhoAtual.includes("/esqueci-senha") ||
-          caminhoAtual.includes("/redefinir-senha")
+        const rotaPublica =
+            caminhoAtual.includes("/login") ||
+            // caminhoAtual.includes("/cadastro") ||
+            caminhoAtual.includes("/esqueci-senha") ||
+            caminhoAtual.includes("/redefinir-senha") ||
+            caminhoAtual.includes("/convite") ||
+            caminhoAtual.includes("/politica-de-privacidade") ||
+            caminhoAtual.includes("/termos-de-uso")
 
       const ignorarLogoutAutomatico =
           error?.config?.skipAutoLogout === true

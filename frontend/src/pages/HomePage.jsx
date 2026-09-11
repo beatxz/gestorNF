@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import {Settings, LogOut, UserRound, BadgePercent, Download, Users, ChartNoAxesCombined,Menu} from "lucide-react"
+import {Settings, LogOut, UserRound, BadgePercent, Download, Users, ChartNoAxesCombined,Menu,ShieldCheck} from "lucide-react"
 import VendedorSidebar from "../components/VendedorSidebar.jsx"
 import FinanceCards from "../components/FinanceCards.jsx"
 import MonthPicker from "../components/MonthPicker.jsx"
@@ -21,11 +21,13 @@ import { getFriendlyError } from "../services/api.js"
 import { mesAtual } from "../utils/format.js"
 import ExportarRelatorioModal from "../components/modals/ExportarRelatorioModal.jsx"
 import { useNavigate } from "react-router-dom"
+import { listarConvites } from "../services/adminService.js"
 
 export default function HomePage() {
   const toast = useToast()
   const { sair } = useAuth()
   const navigate = useNavigate()
+  const [possuiAcessoAdmin, setPossuiAcessoAdmin] = useState(false)
 
   // Evita recriar o callback de erro a cada render (usado pelo hook).
   const toastRef = useRef(toast)
@@ -33,6 +35,25 @@ export default function HomePage() {
   const notificarErro = useCallback((msg) => toastRef.current.erro(msg), [])
 
   const { vendedores, carregando: carregandoVendedores, recarregar } = useVendedores(notificarErro)
+
+  useEffect(() => {
+    async function verificarAcessoAdmin() {
+      try {
+        await listarConvites()
+
+        setPossuiAcessoAdmin(true)
+      } catch (error) {
+        if (error?.response?.status === 403) {
+          setPossuiAcessoAdmin(false)
+          return
+        }
+
+        setPossuiAcessoAdmin(false)
+      }
+    }
+
+    verificarAcessoAdmin()
+  }, [])
 
   // Vendedor selecionado
   const [selecionado, setSelecionado] = useState(null)
@@ -339,6 +360,17 @@ export default function HomePage() {
             <p className="text-sm text-muted-foreground">Vendedores e notas fiscais</p>
           </div>
           <div className="flex items-center gap-2">
+            {possuiAcessoAdmin && (
+                <button
+                    type="button"
+                    onClick={() => navigate("/admin")}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Administração"
+                    title="Administração"
+                >
+                  <ShieldCheck size={18} />
+                </button>
+            )}
             <button
                 onClick={() => navigate("/clientes")}
                 className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
