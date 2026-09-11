@@ -1,9 +1,9 @@
 package com.dev.gestorNF.controller;
 
 import com.dev.gestorNF.business.UsuarioService;
+import com.dev.gestorNF.business.dto.in.ExcluirContaDTORequest;
 import com.dev.gestorNF.business.dto.in.LoginDTORequest;
 import com.dev.gestorNF.business.dto.in.RedefinirSenhaDTORequest;
-import com.dev.gestorNF.business.dto.in.UsuarioDTORequest;
 import com.dev.gestorNF.business.dto.out.UsuarioDTOResponse;
 import com.dev.gestorNF.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,14 +25,14 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    @Operation(summary = "Salvar usuário", description = "Cria um novo usuário")
-    @ApiResponse(responseCode = "200", description = "usuário salvo com sucesso")
-    @ApiResponse(responseCode = "400", description = "usuário já cadastrado")
-    @ApiResponse(responseCode = "500", description = "Erro de servidor")
-    @PostMapping
-    public ResponseEntity<UsuarioDTOResponse> salvarUsuario(@Valid @RequestBody UsuarioDTORequest usuarioDTORequest) {
-        return ResponseEntity.ok(usuarioService.salvarUsuario(usuarioDTORequest));
-    }
+//    @Operation(summary = "Cadastro usuário", description = "Cadastra um novo usuário")
+//    @ApiResponse(responseCode = "200", description = "usuário salvo com sucesso")
+//    @ApiResponse(responseCode = "400", description = "usuário já cadastrado")
+//    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+//    @PostMapping
+//    public ResponseEntity<UsuarioDTOResponse> salvarUsuario(@Valid @RequestBody UsuarioDTORequest usuarioDTORequest) {
+//        return ResponseEntity.ok(usuarioService.salvarUsuario(usuarioDTORequest));
+//    }
     @Operation(summary = "Login usuário", description = "Faz o login do usuário")
     @ApiResponse(responseCode = "200", description = "Login efetuado sucesso")
     @ApiResponse(responseCode = "400", description = "Usuário não cadastrado")
@@ -41,14 +41,16 @@ public class UsuarioController {
     public ResponseEntity<String>login(@Valid @RequestBody LoginDTORequest loginDTORequest){
         return ResponseEntity.ok(usuarioService.autenticarUsuario(loginDTORequest));
     }
-    @Operation(summary = "Deletar usuário", description = "Deleta um usuário por email")
+    @Operation(summary = "Deletar conta do usuario", description = "Deletar conta do usuario")
     @ApiResponse(responseCode = "200", description = "Usuário deletado com sucesso")
     @ApiResponse(responseCode = "400", description = "Usuário não encontrado")
+    @ApiResponse(responseCode = "401", description = "Senha atual incorreta")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
     @DeleteMapping
-    public ResponseEntity<Void>deletarUsuarioEmail(@RequestHeader(name = "Authorization", required = false) String token) {
-        usuarioService.deletarUsuario(token);
-         return ResponseEntity.ok().build();
+    public ResponseEntity<Void> deletarMinhaConta(@RequestHeader(name = "Authorization") String token,
+                                                  @Valid @RequestBody ExcluirContaDTORequest request) {
+        usuarioService.deletarUsuario(token, request);
+        return ResponseEntity.noContent().build();
     }
     @Operation(summary = "Verificar email", description = "verifica usuario por email")
     @ApiResponse(responseCode = "200", description = "Usuário verificado com sucesso")

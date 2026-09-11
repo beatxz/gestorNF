@@ -90,13 +90,38 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
 
         String path = request.getServletPath();
+        String method = request.getMethod();
 
-        return path.equals("/usuario/login")
-                || path.equals("/usuario")
-                || path.equals("/usuario/esqueci-senha")
-                || path.equals("/usuario/redefinir-senha")
-                || path.equals("/usuario/verificar-email");
+        return (path.equals("/usuario/login")
+                && method.equalsIgnoreCase("POST"))
+
+                || (path.equals("/usuario/esqueci-senha")
+                && method.equalsIgnoreCase("POST"))
+
+                || (path.equals("/usuario/redefinir-senha")
+                && method.equalsIgnoreCase("POST"))
+
+                || (path.equals("/usuario/verificar-email")
+                && method.equalsIgnoreCase("GET"))
+
+                || (path.equals("/convites/validar")
+                && method.equalsIgnoreCase("GET"))
+
+                || (path.equals("/convites/aceitar")
+                && method.equalsIgnoreCase("POST"));
     }
+//    @Override
+//    protected boolean shouldNotFilter(HttpServletRequest request) {
+//
+//        String path = request.getServletPath();
+//        String method = request.getMethod();
+//
+//        return (path.equals("/usuario") && method.equalsIgnoreCase("POST"))
+//                || path.equals("/usuario/login")
+//                || path.equals("/usuario/esqueci-senha")
+//                || path.equals("/usuario/redefinir-senha")
+//                || path.equals("/usuario/verificar-email");
+//    }
     private void escreverErro(HttpServletResponse response, HttpServletRequest request, String mensagem
     ) throws IOException {
 

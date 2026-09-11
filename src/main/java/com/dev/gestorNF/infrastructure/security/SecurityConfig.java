@@ -53,11 +53,16 @@ public class SecurityConfig {
                     .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                     .authorizeHttpRequests(authorize -> authorize
                             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/usuario").permitAll()
+//                            .requestMatchers(HttpMethod.POST, "/usuario").permitAll()
                             .requestMatchers(HttpMethod.POST, "/usuario/login").permitAll()
                             .requestMatchers(HttpMethod.GET, "/usuario/verificar-email").permitAll()
                             .requestMatchers(HttpMethod.POST, "/usuario/esqueci-senha").permitAll()
                             .requestMatchers(HttpMethod.POST, "/usuario/redefinir-senha").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/convites/validar").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/convites/aceitar").permitAll()
+                                    .requestMatchers(HttpMethod.POST, "/usuario").denyAll()
+
+                                    .requestMatchers("/admin/**").hasRole("ADMIN")
                             .requestMatchers("/usuario/**").authenticated()
                             .anyRequest().authenticated()
                     )

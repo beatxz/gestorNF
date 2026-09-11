@@ -18,7 +18,7 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Long> {
 
     Optional<ClienteEntity> findByIdAndVendedorIdVendedor(Long id, Long idVendedor);
 
-    Optional<ClienteEntity> findByCodigoCliente(String codigoCliente);
-
     Optional<ClienteEntity> findByCodigoClienteAndVendedorUsuarioId(String codigoCliente, Long usuarioId);
+
+    void deleteByVendedorUsuarioId(Long usuarioId);
 }

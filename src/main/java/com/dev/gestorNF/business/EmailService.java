@@ -29,12 +29,11 @@ public class EmailService {
     @Value("${envio.email.url-recuperacao}")
     private String urlRecuperacao;
 
+    @Value("${envio.email.url-convite}")
+    private String urlConvite;
 
-    public void enviarEmailVerificacao(
-            String email,
-            String nome,
-            String token
-    ) {
+
+    public void enviarEmailVerificacao(String email, String nome, String token) {
 
         try {
 
@@ -44,15 +43,9 @@ public class EmailService {
 
             context.setVariable("nome", nome);
 
-            context.setVariable(
-                    "linkVerificacao",
-                    urlVerificacao + "?token=" + token
-            );
+            context.setVariable("linkVerificacao", urlVerificacao + "?token=" + token);
 
-            String template = templateEngine.process(
-                    "verificar-email",
-                    context
-            );
+            String template = templateEngine.process("verificar-email", context);
 
             CreateEmailOptions emailRequest =
                     CreateEmailOptions.builder()
@@ -65,20 +58,12 @@ public class EmailService {
             resend.emails().send(emailRequest);
 
         } catch (Exception e) {
-
-            throw new RuntimeException(
-                    "Erro ao enviar email de verificação",
-                    e
-            );
+            throw new RuntimeException("Erro ao enviar email de verificação", e);
         }
     }
 
 
-    public void enviarEmailRecuperacaoSenha(
-            String email,
-            String nome,
-            String token
-    ) {
+    public void enviarEmailRecuperacaoSenha(String email, String nome, String token) {
 
         try {
 
@@ -88,15 +73,9 @@ public class EmailService {
 
             context.setVariable("nome", nome);
 
-            context.setVariable(
-                    "linkRecuperacao",
-                    urlRecuperacao + "?token=" + token
-            );
+            context.setVariable("linkRecuperacao", urlRecuperacao + "?token=" + token);
 
-            String template = templateEngine.process(
-                    "recuperar-senha",
-                    context
-            );
+            String template = templateEngine.process("recuperar-senha", context);
 
             CreateEmailOptions emailRequest =
                     CreateEmailOptions.builder()
@@ -109,11 +88,34 @@ public class EmailService {
             resend.emails().send(emailRequest);
 
         } catch (Exception e) {
+            throw new RuntimeException("Erro ao enviar email de recuperação de senha", e);}
+    }
+    public void enviarEmailConvite(String email, String token) {
 
-            throw new RuntimeException(
-                    "Erro ao enviar email de recuperação de senha",
-                    e
-            );
+        try {
+
+            Resend resend = new Resend(apiKey);
+
+            Context context = new Context();
+
+            context.setVariable("linkConvite", urlConvite + "?token=" + token);
+
+            String template = templateEngine.process("convite", context);
+
+            CreateEmailOptions emailRequest =
+                    CreateEmailOptions.builder()
+                            .from(nomeRemetente + " <" + remetente + ">")
+                            .to(email)
+                            .subject("Convite para acessar o GestorNF")
+                            .html(template)
+                            .build();
+
+            resend.emails().send(emailRequest);
+
+        } catch (Exception e) {
+
+            throw new RuntimeException("Erro ao enviar email de convite", e);
         }
     }
+
 }

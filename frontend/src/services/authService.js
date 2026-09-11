@@ -6,10 +6,10 @@ import api, { setToken, clearToken } from "./api"
  */
 
 // Cadastro de usuário -> POST /usuario
-export async function cadastrarUsuario({ nome, email, senha }) {
-  const { data } = await api.post("/usuario", { nome, email, senha })
-  return data
-}
+// export async function cadastrarUsuario({ nome, email, senha }) {
+//   const { data } = await api.post("/usuario", { nome, email, senha })
+//   return data
+// }
 
 // Login -> POST /usuario/login. O backend retorna uma String "Bearer {JWT}".
 export async function login({ email, senha }) {
@@ -32,11 +32,16 @@ export async function redefinirSenha({ token, novaSenha }) {
 }
 
 // Deletar usuário -> DELETE /usuario
-export async function deletarUsuario(email) {
-  const { data } = await api.delete("/usuario")
-  return data
+export async function deletarUsuario(senha) {
+  await api.delete("/usuario", {
+    data: {
+      senha,
+    },
+
+
+    skipAutoLogout: true,
+  })
 }
-// Busca os dados do usuário logado
 export async function buscarUsuarioLogado() {
   const { data } = await api.get("/usuario/me")
   return data

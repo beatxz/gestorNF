@@ -14,6 +14,7 @@ export default function CadastroPage() {
   const [senha, setSenha] = useState("")
   const [erros, setErros] = useState({})
   const [carregando, setCarregando] = useState(false)
+  const [aceitouTermos, setAceitouTermos] = useState(false)
 
   const navigate = useNavigate()
   const toast = useToast()
@@ -33,6 +34,9 @@ export default function CadastroPage() {
       }
     }
 
+    if (!aceitouTermos) {
+      novos.termos = "Você precisa aceitar os Termos de Uso para criar a conta."
+    }
     setErros(novos)
 
     return Object.keys(novos).length === 0
@@ -96,6 +100,54 @@ export default function CadastroPage() {
           Use pelo menos 8 caracteres, com letra maiúscula, minúscula,
           número e caractere especial.
         </p>
+
+        <div>
+          <label className="flex cursor-pointer items-start gap-2 text-xs leading-5 text-muted-foreground">
+            <input
+                type="checkbox"
+                checked={aceitouTermos}
+                onChange={(e) => {
+                  setAceitouTermos(e.target.checked)
+
+                  if (e.target.checked) {
+                    setErros((anteriores) => ({
+                      ...anteriores,
+                      termos: undefined,
+                    }))
+                  }
+                }}
+                className="mt-1 h-4 w-4 rounded border-input accent-[var(--color-accent)]"
+            />
+
+            <span>
+      Li e concordo com os{" "}
+              <Link
+                  to="/termos-de-uso"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-accent hover:underline"
+              >
+        Termos de Uso
+      </Link>{" "}
+              e declaro estar ciente da{" "}
+              <Link
+                  to="/politica-de-privacidade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-accent hover:underline"
+              >
+        Política de Privacidade
+      </Link>
+      .
+    </span>
+          </label>
+
+          {erros.termos && (
+              <p className="mt-1 text-xs text-[var(--color-destructive)]">
+                {erros.termos}
+              </p>
+          )}
+        </div>
 
         <Button type="submit" size="lg" loading={carregando} className="mt-2 w-full">
           Cadastrar

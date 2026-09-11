@@ -57,6 +57,23 @@ public class UsuarioEntity {
     @Column(name = "inicio_janela_recuperacao")
     private LocalDateTime inicioJanelaRecuperacao;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false,  length = 20)
+    @Builder.Default
+    private UsuarioRole role = UsuarioRole.USER;
+
+    @Column(name = "termos_aceitos_em")
+    private LocalDateTime termosAceitosEm;
+
+    @Column(name = "versao_termos", length = 30)
+    private String versaoTermos;
+
+    @Column(name = "politica_privacidade_ciente_em")
+    private LocalDateTime politicaPrivacidadeCienteEm;
+
+    @Column(name = "versao_politica_privacidade", length = 30)
+    private String versaoPoliticaPrivacidade;
+
 
     @OneToMany(mappedBy = "usuario")
     private List<VendedorEntity> vendedor;
