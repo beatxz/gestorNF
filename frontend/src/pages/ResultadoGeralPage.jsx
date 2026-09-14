@@ -255,9 +255,6 @@ export default function ResultadoGeralPage() {
                                                 {vendedor.nomeVendedor}
                                             </div>
 
-                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                ID {vendedor.idVendedor}
-                                            </div>
                                         </td>
 
                                         <td className="px-5 py-4 text-foreground">
