@@ -1,6 +1,8 @@
 package com.dev.gestorNF.infrastructure.security;
 
 
+import com.dev.gestorNF.infrastructure.repository.AssinaturaRepository;
+import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,18 +37,26 @@ public class SecurityConfig {
         // Instâncias de JwtUtil e UserDetailsService injetadas pelo Spring
         private final JwtUtil jwtUtil;
         private final UserDetailsService userDetailsService;
+    private final UsuarioRepository usuarioRepository;
+    private final AssinaturaRepository assinaturaRepository;
 
         // Construtor para injeção de dependências de JwtUtil e UserDetailsService
         @Autowired
-        public SecurityConfig(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+        public SecurityConfig(JwtUtil jwtUtil, UserDetailsService userDetailsService,
+                UsuarioRepository usuarioRepository,
+                AssinaturaRepository assinaturaRepository) {
+
             this.jwtUtil = jwtUtil;
             this.userDetailsService = userDetailsService;
+            this.usuarioRepository = usuarioRepository;
+            this.assinaturaRepository = assinaturaRepository;
         }
 
         // Configuração do filtro de segurança
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
             JwtRequestFilter jwtRequestFilter = new JwtRequestFilter(jwtUtil, userDetailsService);
+            AssinaturaAccessFilter assinaturaAccessFilter = new AssinaturaAccessFilter(usuarioRepository, assinaturaRepository);
 
             http
                     .csrf(AbstractHttpConfigurer::disable)
@@ -69,7 +79,8 @@ public class SecurityConfig {
                     .sessionManagement(session -> session
                             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     )
-                    .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                    .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(assinaturaAccessFilter, JwtRequestFilter.class);
 
             return http.build();
         }

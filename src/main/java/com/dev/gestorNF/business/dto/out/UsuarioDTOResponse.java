@@ -1,5 +1,6 @@
 package com.dev.gestorNF.business.dto.out;
 
+import com.dev.gestorNF.infrastructure.entity.out.UsuarioRole;
 import lombok.*;
 
 @Getter
@@ -15,4 +16,6 @@ public class UsuarioDTOResponse {
     private String email;
     private boolean emailVerificado;
     private Double comissaoTotal;
+    private UsuarioRole role;
+
 }
