@@ -62,13 +62,36 @@ export default function LoginPage() {
 
     try {
 
-      await login({ email: email.trim(), senha })
+      await login({
+        email: email.trim(),
+        senha,
+      })
 
-      entrar()
+      const usuarioLogado =
+          await entrar()
 
-      toast.sucesso("Login realizado com sucesso!")
+      toast.sucesso(
+          "Login realizado com sucesso!",
+      )
 
-      navigate("/")
+      if (usuarioLogado?.role === "ADMIN") {
+
+        navigate(
+            "/admin",
+            {
+              replace: true,
+            },
+        )
+
+      } else {
+
+        navigate(
+            "/",
+            {
+              replace: true,
+            },
+        )
+      }
 
     } catch (error) {
 
@@ -156,18 +179,18 @@ export default function LoginPage() {
       </form>
 
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      {/*<p className="mt-6 text-center text-sm text-muted-foreground">*/}
 
-        Não tem uma conta?{" "}
+      {/*  Não tem uma conta?{" "}*/}
 
-        <Link
-          to="/cadastro"
-          className="font-medium text-accent hover:underline"
-        >
-          Cadastre-se
-        </Link>
+      {/*  <Link*/}
+      {/*    to="/cadastro"*/}
+      {/*    className="font-medium text-accent hover:underline"*/}
+      {/*  >*/}
+      {/*    Cadastre-se*/}
+      {/*  </Link>*/}
 
-      </p>
+      {/*</p>*/}
       <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <Link
             to="/politica-de-privacidade"

@@ -30,4 +30,6 @@ public interface NotaFiscalRepository extends JpaRepository<NotaFiscalEntity,Lon
     findByVendedorIdVendedorAndDataVendaBetweenOrderByDataVendaAsc(Long idVendedor, LocalDate inicio, LocalDate fim);
 
     void deleteByVendedorUsuarioId(Long usuarioId);
+
+    long countByVendedorUsuarioId(Long usuarioId);
 }
