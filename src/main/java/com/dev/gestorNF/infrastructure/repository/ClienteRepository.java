@@ -21,4 +21,6 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Long> {
     Optional<ClienteEntity> findByCodigoClienteAndVendedorUsuarioId(String codigoCliente, Long usuarioId);
 
     void deleteByVendedorUsuarioId(Long usuarioId);
+
+    long countByVendedorUsuarioId(Long usuarioId);
 }

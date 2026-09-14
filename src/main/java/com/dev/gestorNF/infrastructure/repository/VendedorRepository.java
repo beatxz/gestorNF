@@ -16,4 +16,6 @@ public interface VendedorRepository extends JpaRepository<VendedorEntity,Long> {
 
     void deleteByUsuarioId(Long usuarioId);
 
+    long countByUsuarioId(Long usuarioId);
+
 }

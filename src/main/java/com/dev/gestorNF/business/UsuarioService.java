@@ -10,10 +10,7 @@ import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import com.dev.gestorNF.infrastructure.exception.ConflictException;
 import com.dev.gestorNF.infrastructure.exception.TooManyRequestsException;
 import com.dev.gestorNF.infrastructure.exception.UnauthorizedException;
-import com.dev.gestorNF.infrastructure.repository.ClienteRepository;
-import com.dev.gestorNF.infrastructure.repository.NotaFiscalRepository;
-import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
-import com.dev.gestorNF.infrastructure.repository.VendedorRepository;
+import com.dev.gestorNF.infrastructure.repository.*;
 import com.dev.gestorNF.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,6 +37,8 @@ public class UsuarioService {
     private final ClienteRepository clienteRepository;
     private final NotaFiscalRepository notaFiscalRepository;
     private final VendedorRepository vendedorRepository;
+    private final PagamentoRepository pagamentoRepository;
+    private final AssinaturaRepository assinaturaRepository;
 
 
     public boolean verificaEmailExiste(String email){
@@ -237,11 +236,16 @@ public class UsuarioService {
 
         Long usuarioId = usuario.getId();
 
+        pagamentoRepository.deleteByAssinaturaUsuarioId(usuarioId);
+
+        assinaturaRepository.deleteByUsuarioId(usuarioId);
+
         clienteRepository.deleteByVendedorUsuarioId(usuarioId);
 
         notaFiscalRepository.deleteByVendedorUsuarioId(usuarioId);
 
         vendedorRepository.deleteByUsuarioId(usuarioId);
+
 
         usuarioRepository.delete(usuario);
     }

@@ -4,11 +4,9 @@ import com.dev.gestorNF.business.dto.in.AceitarConviteDTORequest;
 import com.dev.gestorNF.business.dto.in.ConviteDTORequest;
 import com.dev.gestorNF.business.dto.out.ConviteDTOResponse;
 import com.dev.gestorNF.business.dto.out.ConvitePublicoDTOResponse;
-import com.dev.gestorNF.infrastructure.entity.out.ConviteEntity;
-import com.dev.gestorNF.infrastructure.entity.out.ConviteStatus;
-import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
-import com.dev.gestorNF.infrastructure.entity.out.UsuarioRole;
+import com.dev.gestorNF.infrastructure.entity.out.*;
 import com.dev.gestorNF.infrastructure.exception.ConflictException;
+import com.dev.gestorNF.infrastructure.repository.AssinaturaRepository;
 import com.dev.gestorNF.infrastructure.repository.ConviteRepository;
 import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +29,8 @@ public class ConviteService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final AssinaturaRepository assinaturaRepository;
+
 
     @Transactional
     public ConviteDTOResponse criarConvite(ConviteDTORequest request) {
@@ -173,7 +173,19 @@ public class ConviteService {
                 .versaoPoliticaPrivacidade(VERSAO_POLITICA_PRIVACIDADE)
                 .build();
 
-        usuarioRepository.save(usuario);
+        UsuarioEntity usuarioSalvo =
+                usuarioRepository.save(usuario);
+
+        AssinaturaEntity assinatura =
+                AssinaturaEntity.builder()
+                        .usuario(usuarioSalvo)
+                        .status(AssinaturaStatus.EM_TESTE)
+                        .inicioTeste(agora)
+                        .fimTeste(agora.plusDays(2))
+                        .criadoEm(agora)
+                        .build();
+
+        assinaturaRepository.save(assinatura);
 
         convite.setStatus(ConviteStatus.ACEITO);
         convite.setAceitoEm(agora);

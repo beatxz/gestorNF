@@ -69,6 +69,29 @@ api.interceptors.response.use(
         clearToken()
         window.location.href = "/login"
       }
+      const mensagemBackend =
+          typeof error?.response?.data === "string"
+              ? error.response.data
+              : (
+                  error?.response?.data?.message ||
+                  error?.response?.data?.menssage ||
+                  ""
+              )
+
+      const bloqueioAssinatura =
+          status === 403 &&
+          (mensagemBackend.toLowerCase().includes("período de teste") ||
+
+              mensagemBackend.toLowerCase().includes("acesso está suspenso") ||
+
+              mensagemBackend.toLowerCase().includes("assinatura está cancelada"))
+
+      if (
+          bloqueioAssinatura && caminhoAtual !== "/acesso-bloqueado") {
+        sessionStorage.setItem("gestornf_motivo_bloqueio", mensagemBackend,)
+
+        window.location.href = "/acesso-bloqueado"
+      }
 
       return Promise.reject(error)
     },
@@ -92,7 +115,7 @@ export function getFriendlyError(error, fallback = "Algo deu errado. Tente novam
       }
       return "Sua sessão expirou. Faça login novamente."
     }
-    if (status === 403) return "Você não tem permissão para realizar esta operação."
+    if (status === 403) {return (mensagemBackend || "Você não tem permissão para realizar esta operação.")}
     if (status === 404) return "Recurso não encontrado."
     if (status === 429) return mensagemBackend || "Muitas tentativas. Aguarde alguns minutos e tente novamente."
     if (status === 400 || status === 409) return mensagemBackend || fallback

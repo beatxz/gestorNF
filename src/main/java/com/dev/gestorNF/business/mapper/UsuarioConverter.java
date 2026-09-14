@@ -32,6 +32,7 @@ public class UsuarioConverter {
                 .nome(entity.getNome())
                 .comissaoTotal(entity.getComissaoTotal())
                 .emailVerificado(entity.isEmailVerificado())
+                .role(entity.getRole())
                 .build();
     }
 
