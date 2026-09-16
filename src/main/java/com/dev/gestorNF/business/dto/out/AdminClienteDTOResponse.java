@@ -39,4 +39,7 @@ public class AdminClienteDTOResponse {
     private long quantidadeClientes;
 
     private long quantidadeNotas;
+
+    private boolean testeExpirado;
+
 }

@@ -342,6 +342,87 @@ public class NotaFiscalService {
                 .vendedores(resultadoVendedores)
                 .build();
     }
+    public List<VendaMensalDTOResponse> buscarVendasAnuais(
+            String token,
+            int ano
+    ) {
+
+        String email =
+                jwtUtil.extrairEmailToken(
+                        token.substring(7)
+                );
+
+        UsuarioEntity usuario =
+                usuarioRepository
+                        .findByEmail(email)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Usuário não encontrado"
+                                )
+                        );
+
+        LocalDate inicioAno =
+                LocalDate.of(ano, 1, 1);
+
+        LocalDate fimAno =
+                LocalDate.of(ano, 12, 31);
+
+        List<NotaFiscalEntity> notas =
+                notaFiscalRepository
+                        .findByVendedorUsuarioIdAndDataVendaBetweenOrderByDataVendaAsc(
+                                usuario.getId(),
+                                inicioAno,
+                                fimAno
+                        );
+
+        Map<Integer, Double> vendasPorMes =
+                notas.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        nota ->
+                                                nota.getDataVenda().getMonthValue(),
+                                        Collectors.summingDouble(
+                                                NotaFiscalEntity::getValorNotaFiscal
+                                        )
+                                )
+                        );
+
+        String[] nomesMeses = {
+                "Jan",
+                "Fev",
+                "Mar",
+                "Abr",
+                "Mai",
+                "Jun",
+                "Jul",
+                "Ago",
+                "Set",
+                "Out",
+                "Nov",
+                "Dez"
+        };
+
+        List<VendaMensalDTOResponse> resultado =
+                new ArrayList<>();
+
+        for (int mes = 1; mes <= 12; mes++) {
+
+            resultado.add(
+                    VendaMensalDTOResponse.builder()
+                            .mes(mes)
+                            .nomeMes(nomesMeses[mes - 1])
+                            .valor(
+                                    vendasPorMes.getOrDefault(
+                                            mes,
+                                            0.0
+                                    )
+                            )
+                            .build()
+            );
+        }
+
+        return resultado;
+    }
     public byte[] gerarPdfResultadoGeral(String token, YearMonth mes) {
 
         ResultadoGeralDTO resultado = buscarResultadoGeral(token, mes);

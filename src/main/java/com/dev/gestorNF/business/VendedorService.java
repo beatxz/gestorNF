@@ -6,10 +6,7 @@ import com.dev.gestorNF.business.mapper.VendedorConverter;
 import com.dev.gestorNF.infrastructure.entity.out.ClienteEntity;
 import com.dev.gestorNF.infrastructure.entity.out.UsuarioEntity;
 import com.dev.gestorNF.infrastructure.entity.out.VendedorEntity;
-import com.dev.gestorNF.infrastructure.repository.ClienteRepository;
-import com.dev.gestorNF.infrastructure.repository.NotaFiscalRepository;
-import com.dev.gestorNF.infrastructure.repository.UsuarioRepository;
-import com.dev.gestorNF.infrastructure.repository.VendedorRepository;
+import com.dev.gestorNF.infrastructure.repository.*;
 import com.dev.gestorNF.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +24,7 @@ public class VendedorService {
     private final VendedorRepository vendedorRepository;
     private final NotaFiscalRepository notaFiscalRepository;
     private final ClienteRepository clienteRepository;
+    private final MetaVendedorRepository metaVendedorRepository;
 
     public VendedorDTOResponse cadastroVendedor(String token, VendedorDTORequest vendedorDTORequest) {
 
@@ -80,6 +78,10 @@ public class VendedorService {
         clientes.forEach(cliente -> cliente.setVendedor(null));
 
         clienteRepository.saveAll(clientes);
+
+        metaVendedorRepository.deleteByVendedorIdVendedor(
+                idVendedor
+        );
 
         vendedorRepository.delete(vendedorEntity);
     }
