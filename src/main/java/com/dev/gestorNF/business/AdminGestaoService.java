@@ -135,13 +135,13 @@ public class AdminGestaoService {
                 .build();
     }
 
-    private AdminClienteDTOResponse paraClienteResponse(
-            UsuarioEntity usuario) {
+    private AdminClienteDTOResponse paraClienteResponse(UsuarioEntity usuario) {
 
         AssinaturaEntity assinatura =
                 assinaturaRepository.findByUsuarioId(usuario.getId())
                         .orElse(null);
         Long minutosRestantes = null;
+        boolean testeExpirado = false;
 
         if (
                 assinatura != null && assinatura.getStatus() ==
@@ -157,6 +157,8 @@ public class AdminGestaoService {
             } else {
 
                 minutosRestantes = 0L;
+                testeExpirado = true;
+
             }
         }
 
@@ -172,6 +174,7 @@ public class AdminGestaoService {
                 .fimTeste(assinatura != null ? assinatura.getFimTeste() : null)
 
                 .minutosRestantesTeste(minutosRestantes)
+                .testeExpirado(testeExpirado)
 
                 .valorMensal(assinatura != null ? assinatura.getValorMensal() : null)
 

@@ -39,6 +39,8 @@ public class UsuarioService {
     private final VendedorRepository vendedorRepository;
     private final PagamentoRepository pagamentoRepository;
     private final AssinaturaRepository assinaturaRepository;
+    private final MetaMensalRepository metaMensalRepository;
+    private final MetaVendedorRepository metaVendedorRepository;
 
 
     public boolean verificaEmailExiste(String email){
@@ -239,6 +241,10 @@ public class UsuarioService {
         pagamentoRepository.deleteByAssinaturaUsuarioId(usuarioId);
 
         assinaturaRepository.deleteByUsuarioId(usuarioId);
+
+        metaMensalRepository.deleteByUsuarioId(usuarioId);
+
+        metaVendedorRepository.deleteByVendedorUsuarioId(usuarioId);
 
         clienteRepository.deleteByVendedorUsuarioId(usuarioId);
 

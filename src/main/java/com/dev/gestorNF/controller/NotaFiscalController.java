@@ -122,6 +122,11 @@ public class NotaFiscalController {
 
         return ResponseEntity.ok(notaFiscalService.buscarResultadoGeral(token, mes));
     }
+    @GetMapping("/vendas-anuais")
+    public ResponseEntity<List<VendaMensalDTOResponse>> buscarVendasAnuais(@RequestHeader("Authorization") String token, @RequestParam int ano) {
+
+        return ResponseEntity.ok(notaFiscalService.buscarVendasAnuais(token, ano));
+    }
     @Operation(summary = "Exportar resultado geral em PDF", description = "Gera o relatório consolidado mensal de todos os vendedores")
     @ApiResponse(responseCode = "200", description = "PDF gerado com sucesso")
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
