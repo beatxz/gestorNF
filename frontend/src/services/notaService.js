@@ -157,3 +157,13 @@ export async function cadastrarNotasEmLote(notas) {
 
   return data
 }
+export async function buscarVendasAnuais(ano) {
+  const { data } = await api.get(
+      "/notaFiscal/vendas-anuais",
+      {
+        params: { ano },
+      },
+  )
+
+  return data
+}

@@ -1094,8 +1094,8 @@ export default function AdminPage() {
                                 {clientes
                                     .filter(
                                         (cliente) =>
-                                            cliente.status ===
-                                            "EM_TESTE",
+                                            cliente.status === "EM_TESTE" &&
+                                            !cliente.testeExpirado,
                                     )
                                     .map(
                                         (cliente) => (
@@ -1142,11 +1142,12 @@ export default function AdminPage() {
                                     )}
 
 
-                                {clientes.filter(
-                                    (cliente) =>
-                                        cliente.status ===
-                                        "EM_TESTE",
-                                ).length === 0 && (
+                                {clientes
+                                    .filter(
+                                        (cliente) =>
+                                            cliente.status === "EM_TESTE" &&
+                                            !cliente.testeExpirado,
+                                    ).length === 0 && (
 
                                     <p className="text-sm text-muted-foreground">
                                         Nenhum cliente em período de teste.
@@ -1441,10 +1442,17 @@ export default function AdminPage() {
 
                                                     <td className="px-6 py-4 text-sm text-muted-foreground">
 
-                                                        {cliente.status ===
-                                                        "EM_TESTE"
-                                                            ? formatarTempoTeste(
-                                                                cliente.minutosRestantesTeste,
+                                                        {cliente.status === "EM_TESTE"
+                                                            ? (
+                                                                cliente.testeExpirado
+                                                                    ? (
+                                                                        <span className="font-medium text-destructive">
+                                                                            Teste encerrado
+                                                                        </span>
+                                                                    )
+                                                                    : formatarTempoTeste(
+                                                                        cliente.minutosRestantesTeste,
+                                                                    )
                                                             )
                                                             : "—"}
 
@@ -1540,7 +1548,12 @@ export default function AdminPage() {
                                                             )}
 
                                                             <Button
-                                                                variant="outline"
+                                                                variant={
+                                                                    cliente.testeExpirado ||
+                                                                    !cliente.status
+                                                                        ? "primary"
+                                                                        : "outline"
+                                                                }
                                                                 size="sm"
                                                                 onClick={() =>
                                                                     abrirConfiguracao(
@@ -1548,11 +1561,10 @@ export default function AdminPage() {
                                                                     )
                                                                 }
                                                             >
-
-                                                                {cliente.status
-                                                                    ? "Editar"
-                                                                    : "Ativar"}
-
+                                                                {cliente.testeExpirado ||
+                                                                !cliente.status
+                                                                    ? "Ativar"
+                                                                    : "Editar"}
                                                             </Button>
 
 

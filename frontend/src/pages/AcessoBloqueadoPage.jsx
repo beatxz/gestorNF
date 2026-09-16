@@ -15,7 +15,6 @@ export default function AcessoBloqueadoPage() {
     const { sair } = useAuth()
 
     const motivo =
-        location.state?.motivo ||
         sessionStorage.getItem(
             "gestornf_motivo_bloqueio",
         ) ||
