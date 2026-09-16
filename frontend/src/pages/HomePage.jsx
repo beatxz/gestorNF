@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import {Settings, LogOut, UserRound, BadgePercent, Download, Users, ChartNoAxesCombined,Menu,ShieldCheck} from "lucide-react"
+import {Settings, LogOut, BadgePercent, Download, Users, ChartNoAxesCombined,Menu,ShieldCheck} from "lucide-react"
 import VendedorSidebar from "../components/VendedorSidebar.jsx"
 import FinanceCards from "../components/FinanceCards.jsx"
 import MonthPicker from "../components/MonthPicker.jsx"
 import NotasTable from "../components/NotasTable.jsx"
 import Button from "../components/ui/Button.jsx"
-import { EmptyState } from "../components/ui/Feedback.jsx"
 import AddVendedorModal from "../components/modals/AddVendedorModal.jsx"
 import AddNotaModal from "../components/modals/AddNotaModal.jsx"
 import NotaDetalheModal from "../components/modals/NotaDetalheModal.jsx"
@@ -16,18 +15,39 @@ import { useAuth } from "../hooks/useAuth.jsx"
 import { useToast } from "../hooks/useToast.jsx"
 import { buscarVendedorPorId } from "../services/vendedorService.js"
 import { buscarUsuarioLogado } from "../services/authService.js"
-import {listarNotasDoVendedor, buscarNota, buscarValorMensal, buscarValorComissao,} from "../services/notaService.js"
+import {
+  listarNotasDoVendedor,
+  buscarNota,
+  buscarValorMensal,
+  buscarValorComissao,
+  buscarVendasAnuais,
+  buscarResultadoGeral,
+} from "../services/notaService.js"
 import { getFriendlyError } from "../services/api.js"
 import { mesAtual } from "../utils/format.js"
 import ExportarRelatorioModal from "../components/modals/ExportarRelatorioModal.jsx"
 import { useNavigate } from "react-router-dom"
 import { listarConvites } from "../services/adminService.js"
+import {ArrowLeft} from "lucide-react"
+import VendasChart from "../components/VendasChart.jsx"
+import MetaMensalCard from "../components/MetaMensalCard.jsx"
+import MetaVendedorCard from "../components/MetaVendedorCard.jsx"
+import VendasPorVendedorChart from "../components/VendasPorVendedorChart.jsx"
+import {buscarMetaMensal, salvarMetaMensal, buscarMetaVendedor, salvarMetaVendedor,} from "../services/metaService.js"
 
 export default function HomePage() {
   const toast = useToast()
   const { sair } = useAuth()
   const navigate = useNavigate()
   const [possuiAcessoAdmin, setPossuiAcessoAdmin] = useState(false)
+  const [vendasAnuais, setVendasAnuais] = useState([])
+  const [resultadoGeral, setResultadoGeral] = useState(null)
+  const [metaMensal, setMetaMensal] = useState(null)
+  const [carregandoHome, setCarregandoHome] = useState(false)
+  const [salvandoMeta, setSalvandoMeta] = useState(false)
+  const [metaVendedor, setMetaVendedor] = useState(null)
+  const [carregandoMetaVendedor, setCarregandoMetaVendedor] = useState(false)
+  const [salvandoMetaVendedor, setSalvandoMetaVendedor] = useState(false)
 
   // Evita recriar o callback de erro a cada render (usado pelo hook).
   const toastRef = useRef(toast)
@@ -57,7 +77,7 @@ export default function HomePage() {
 
   // Vendedor selecionado
   const [selecionado, setSelecionado] = useState(null)
-  const [sidebarAberta, setSidebarAberta] = useState(false)
+  const [sidebarAberta, setSidebarAberta] = useState(true)
 
   // Busca de vendedor por ID
   const [buscaVendedor, setBuscaVendedor] = useState(null) // vendedor encontrado
@@ -87,6 +107,64 @@ export default function HomePage() {
 
   const lista = buscaVendedor ? [buscaVendedor] : vendedores
 
+  const carregarHome = useCallback(
+      async (mesRef) => {
+
+        setCarregandoHome(true)
+
+        try {
+
+          const ano =
+              Number(
+                  mesRef.split("-")[0],
+              )
+
+          const [
+            vendas,
+            meta,
+            resultado,
+          ] = await Promise.all([
+            buscarVendasAnuais(ano),
+            buscarMetaMensal(mesRef),
+            buscarResultadoGeral(mesRef),
+          ])
+
+          setVendasAnuais(
+              Array.isArray(vendas)
+                  ? vendas
+                  : [],
+          )
+
+          setMetaMensal(meta)
+          setResultadoGeral(resultado)
+
+        } catch (error) {
+
+          toastRef.current.erro(
+              getFriendlyError(
+                  error,
+                  "Não foi possível carregar a visão geral.",
+              ),
+          )
+
+        } finally {
+
+          setCarregandoHome(false)
+        }
+      },
+      [],
+  )
+  useEffect(() => {
+
+    if (!selecionado) {
+      carregarHome(mes)
+    }
+
+  }, [
+    selecionado,
+    mes,
+    carregarHome,
+  ])
   // Carrega as notas do vendedor selecionado.
   const carregarNotas = useCallback(
     async (idVendedor) => {
@@ -125,6 +203,41 @@ export default function HomePage() {
     }
   }, [])
 
+  // Carrega a meta individual do vendedor para o mês selecionado.
+  const carregarMetaVendedor = useCallback(
+      async (idVendedor, mesRef) => {
+
+        setCarregandoMetaVendedor(true)
+
+        try {
+
+          const dados =
+              await buscarMetaVendedor(
+                  idVendedor,
+                  mesRef,
+              )
+
+          setMetaVendedor(dados)
+
+        } catch (error) {
+
+          toastRef.current.erro(
+              getFriendlyError(
+                  error,
+                  "Não foi possível carregar a meta do vendedor.",
+              ),
+          )
+
+          setMetaVendedor(null)
+
+        } finally {
+
+          setCarregandoMetaVendedor(false)
+        }
+      },
+      [],
+  )
+
   useEffect(() => {
     async function carregarUsuario() {
       try {
@@ -161,8 +274,40 @@ export default function HomePage() {
     }
   }, [selecionado, mes, carregarValores])
 
+  useEffect(() => {
+
+    if (selecionado?.id != null) {
+
+      carregarMetaVendedor(
+          selecionado.id,
+          mes,
+      )
+
+    } else {
+
+      setMetaVendedor(null)
+    }
+
+  }, [
+    selecionado,
+    mes,
+    carregarMetaVendedor,
+  ])
+
   function selecionarVendedor(v) {
     setSelecionado(v)
+    setNotaDetalhe(null)
+  }
+  function voltarParaInicio() {
+
+    setSelecionado(null)
+
+    setBuscaVendedor(null)
+
+    setBuscaNota(null)
+
+    setBuscaCodigoCliente(null)
+
     setNotaDetalhe(null)
   }
 
@@ -190,6 +335,75 @@ export default function HomePage() {
     setBuscaVendedor(null)
   }
 
+  async function handleSalvarMeta(valor) {
+
+    setSalvandoMeta(true)
+
+    try {
+
+      const dados =
+          await salvarMetaMensal(
+              mes,
+              valor,
+          )
+
+      setMetaMensal(dados)
+
+      toast.sucesso(
+          "Meta mensal salva com sucesso!",
+      )
+
+    } catch (error) {
+
+      toast.erro(
+          getFriendlyError(
+              error,
+              "Não foi possível salvar a meta.",
+          ),
+      )
+
+    } finally {
+
+      setSalvandoMeta(false)
+    }
+  }
+  async function handleSalvarMetaVendedor(valor) {
+
+    if (!selecionado?.id) {
+      return
+    }
+
+    setSalvandoMetaVendedor(true)
+
+    try {
+
+      const dados =
+          await salvarMetaVendedor(
+              selecionado.id,
+              mes,
+              valor,
+          )
+
+      setMetaVendedor(dados)
+
+      toast.sucesso(
+          "Meta do vendedor salva com sucesso!",
+      )
+
+    } catch (error) {
+
+      toast.erro(
+          getFriendlyError(
+              error,
+              "Não foi possível salvar a meta do vendedor.",
+          ),
+      )
+
+    } finally {
+
+      setSalvandoMetaVendedor(false)
+    }
+  }
 
   async function handleBuscarNotaGlobal(numero) {
     if (!numero) return
@@ -279,8 +493,18 @@ export default function HomePage() {
     setBuscaCodigoCliente(null)
 
     if (selecionado) {
+
       carregarNotas(selecionado.id)
-      carregarValores(selecionado.id, mes)
+
+      carregarValores(
+          selecionado.id,
+          mes,
+      )
+
+      carregarMetaVendedor(
+          selecionado.id,
+          mes,
+      )
     }
   }
 
@@ -347,18 +571,18 @@ export default function HomePage() {
       <main className="flex flex-1 flex-col overflow-hidden">
         {/* Barra superior */}
         <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
-          <button
-              type="button"
-              onClick={() => setSidebarAberta(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
-              aria-label="Abrir menu lateral"
-          >
-            <Menu size={20} />
-          </button>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Painel de gestão</h1>
-            <p className="text-sm text-muted-foreground">Vendedores e notas fiscais</p>
-          </div>
+          {!sidebarAberta && (
+              <button
+                  type="button"
+                  onClick={() => setSidebarAberta(true)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Mostrar vendedores"
+                  title="Mostrar vendedores"
+              >
+                <Menu size={20} />
+              </button>
+          )}
+
           <div className="flex items-center gap-2">
             {possuiAcessoAdmin && (
                 <button
@@ -404,72 +628,193 @@ export default function HomePage() {
         </header>
 
         {/* Conteúdo */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto px-4 py-6 lg:px-5">
           {!selecionado ? (
-            <div className="flex h-full items-center justify-center">
-              <EmptyState
-                icon={UserRound}
-                titulo="Selecione um vendedor"
-                descricao="Escolha um vendedor na lista ao lado para ver suas notas fiscais e valores mensais."
-              />
-            </div>
-          ) : (
-            <div className="mx-auto flex max-w-5xl flex-col gap-6">
-              {/* Cabeçalho do vendedor */}
-              <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
 
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">
-                    {selecionado.nome}
-                  </h2>
+              <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
 
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-  <span className="flex items-center gap-1.5">
-    <BadgePercent size={14} /> Comissão {selecionado.comissao}%
-  </span>
-                  </div>
-                </div>
+                <div className="flex justify-end">
 
-                <div className="flex flex-wrap items-center gap-2">
 
                   <MonthPicker
                       value={mes}
                       onChange={setMes}
                   />
 
-                  <Button
-                      variant="outline"
-                      onClick={() => setModalRelatorio(true)}
-                  >
-                    <Download size={16} />
-                    Exportar PDF
-                  </Button>
+                </div>
 
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+
+                  <VendasChart
+                      dados={vendasAnuais}
+                      ano={mes.split("-")[0]}
+                  />
+
+                  <MetaMensalCard
+                      dados={metaMensal}
+                      salvando={salvandoMeta}
+                      onSalvar={handleSalvarMeta}
+                  />
+
+                </div>
+
+                <div className="flex justify-start">
+                  <VendasPorVendedorChart
+                      vendedores={resultadoGeral?.vendedores ?? []}
+                  />
                 </div>
 
               </div>
 
-              {/* Cartões financeiros */}
-              <FinanceCards
-                  valorMensal={valorMensal}
-                  valorComissao={valorComissao}
-                  valorComissaoUsuario={valorComissaoUsuario}
-                  percentualVendedor={selecionado.comissao}
-                  percentualUsuario={percentualUsuario}
-                  carregando={carregandoValores}
-              />
+          ) : (
+              <div className="flex w-full flex-col gap-5">
 
-              {/* Tabela de notas */}
-              <NotasTable
-                  notas={notasExibidas}
-                  carregando={carregandoNotas}
-                  onAdicionar={() => setModalNota(true)}
-                  onSelecionarNota={(n) => setNotaDetalhe(n)}
-                  onBuscarCodigo={handleBuscarCodigoCliente}
-                  buscaCodigoAtiva={buscaCodigoCliente !== null}
-                  onLimparBuscaCodigo={limparBuscaCodigoCliente}
-              />
-            </div>
+                {/* Cabeçalho do vendedor */}
+                <div className="overflow-hidden rounded-xl border border-accent/15 bg-accent/5 shadow-sm">
+
+                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto]">
+
+                    {/* Informações do vendedor */}
+                    <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
+
+                      <button
+                          type="button"
+                          onClick={voltarParaInicio}
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <ArrowLeft size={14} />
+                        Voltar para início
+                      </button>
+
+
+                      <div className="hidden h-10 w-px bg-border sm:block" />
+
+
+                      <div>
+                        <h2 className="text-xl font-bold text-foreground">
+                          {selecionado.nome}
+                        </h2>
+
+                        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <BadgePercent size={12} />
+                          Comissão {selecionado.comissao}%
+                        </div>
+                      </div>
+
+                    </div>
+
+
+                    {/* Mês e exportação */}
+                    <div className="flex flex-wrap items-center gap-3 border-t border-accent/15 px-4 py-3 lg:border-l lg:border-t-0">
+
+                      <MonthPicker
+                          value={mes}
+                          onChange={setMes}
+                      />
+
+                      <Button
+                          variant="outline"
+                          onClick={() =>
+                              setModalRelatorio(true)
+                          }
+                      >
+                        <Download size={16} />
+                        Exportar PDF
+                      </Button>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                {/* Conteúdo principal */}
+                <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+
+                  {/* Notas fiscais */}
+                  <div className="min-w-0">
+
+                    <NotasTable
+                        notas={notasExibidas}
+                        carregando={carregandoNotas}
+                        onAdicionar={() =>
+                            setModalNota(true)
+                        }
+                        onSelecionarNota={(n) =>
+                            setNotaDetalhe(n)
+                        }
+                        onBuscarCodigo={
+                          handleBuscarCodigoCliente
+                        }
+                        buscaCodigoAtiva={
+                            buscaCodigoCliente !== null
+                        }
+                        onLimparBuscaCodigo={
+                          limparBuscaCodigoCliente
+                        }
+                    />
+
+                  </div>
+
+
+                  {/* Resumo financeiro */}
+                  <div className="flex min-w-0 flex-col gap-4">
+
+                    <FinanceCards
+                        valorMensal={valorMensal}
+                        valorComissao={valorComissao}
+                        valorComissaoUsuario={
+                          valorComissaoUsuario
+                        }
+                        percentualVendedor={
+                          selecionado.comissao
+                        }
+                        percentualUsuario={
+                          percentualUsuario
+                        }
+                        carregando={
+                          carregandoValores
+                        }
+                        tipo="principal"
+                    />
+
+
+                    <MetaVendedorCard
+                        dados={metaVendedor}
+                        salvando={
+                          salvandoMetaVendedor
+                        }
+                        onSalvar={
+                          handleSalvarMetaVendedor
+                        }
+                    />
+
+
+                    <FinanceCards
+                        valorMensal={valorMensal}
+                        valorComissao={valorComissao}
+                        valorComissaoUsuario={
+                          valorComissaoUsuario
+                        }
+                        percentualVendedor={
+                          selecionado.comissao
+                        }
+                        percentualUsuario={
+                          percentualUsuario
+                        }
+                        carregando={
+                          carregandoValores
+                        }
+                        tipo="usuario"
+                    />
+
+                  </div>
+
+                </div>
+
+              </div>
           )}
         </div>
       </main>

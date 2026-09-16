@@ -81,21 +81,20 @@ export default function VendedorSidebar({
 
             <aside
                 className={`
-          fixed inset-y-0 left-0 z-50
-          flex w-72 shrink-0 flex-col
-          border-r border-border bg-card
-          transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50
+        flex w-72 shrink-0 flex-col
+        border-r border-border bg-card
+        transition-all duration-300 ease-in-out
 
-          lg:static
-          lg:z-auto
-          lg:translate-x-0
+        lg:static
+        lg:z-auto
 
-          ${
+        ${
                     aberta
-                        ? "translate-x-0"
-                        : "-translate-x-full"
+                        ? "translate-x-0 lg:w-72"
+                        : "-translate-x-full lg:w-0 lg:-translate-x-full lg:overflow-hidden lg:border-r-0"
                 }
-        `}
+    `}
             >
                 {/* Logo + fechar */}
                 <div className="flex items-center justify-between border-b border-border p-5">
@@ -104,7 +103,7 @@ export default function VendedorSidebar({
                     <button
                         type="button"
                         onClick={onFechar}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         aria-label="Fechar menu lateral"
                     >
                         <X size={20} />
