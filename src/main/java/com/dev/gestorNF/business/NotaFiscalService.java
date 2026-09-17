@@ -262,9 +262,11 @@ public class NotaFiscalService {
         UsuarioEntity usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        if (usuario.getComissaoTotal() == null) {
-            throw new RuntimeException("Configure primeiro a comissão total da empresa");
-        }
+        boolean comissaoConfigurada = usuario.getComissaoTotal() != null;
+
+        double comissaoTotal = comissaoConfigurada
+                ? usuario.getComissaoTotal()
+                : 0.0;
 
         LocalDate inicioMes = mes.atDay(1);
         LocalDate fimMes = mes.atEndOfMonth();
@@ -295,7 +297,9 @@ public class NotaFiscalService {
                             double percentualVendedor = vendedor.getComissao();
 
                             double percentualUsuario =
-                                    Math.max(0, usuario.getComissaoTotal() - percentualVendedor);
+                                    comissaoConfigurada
+                                            ? Math.max(0, comissaoTotal - percentualVendedor)
+                                            : 0.0;
 
                             double comissaoVendedor =
                                     totalVendas * (percentualVendedor / 100);
@@ -336,6 +340,7 @@ public class NotaFiscalService {
         return ResultadoGeralDTO.builder()
                 .mes(mes)
                 .comissaoTotalEmpresa(usuario.getComissaoTotal())
+                .comissaoConfigurada(comissaoConfigurada)
                 .vendasTotais(vendasTotais)
                 .comissoesVendedores(comissoesVendedores)
                 .comissaoUsuario(comissaoUsuario)

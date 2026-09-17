@@ -18,6 +18,8 @@ public class ResultadoGeralDTO {
 
     private Double vendasTotais;
 
+    private Boolean comissaoConfigurada;
+
     private Double comissoesVendedores;
 
     private Double comissaoUsuario;
