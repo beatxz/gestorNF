@@ -49,7 +49,7 @@ public class ClienteController {
     @PostMapping
     public ResponseEntity<ClienteDTOResponse> cadastrarCliente(@RequestHeader("Authorization") String token,
                                                                @PathVariable Long idVendedor,
-                                                               @RequestBody ClienteDTORequest clienteDTORequest) {
+                                                               @Valid @RequestBody ClienteDTORequest clienteDTORequest) {
         return ResponseEntity.ok(clienteService.cadastrarCliente(token, idVendedor, clienteDTORequest));
     }
 

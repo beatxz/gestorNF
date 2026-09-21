@@ -78,6 +78,7 @@ public class ClienteService {
         clienteEntity.setCodigoCliente(clienteDTORequest.getCodigoCliente());
         clienteEntity.setCnpj(clienteDTORequest.getCnpj());
         clienteEntity.setTelefone(clienteDTORequest.getTelefone());
+        clienteEntity.setObservacao(clienteDTORequest.getObservacao());
         clienteEntity.setMunicipio(clienteDTORequest.getMunicipio());
         clienteEntity.setTransportadora(clienteDTORequest.getTransportadora());
 

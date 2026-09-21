@@ -23,8 +23,11 @@ public class ClienteEntity {
     @Column(name = "cnpj", length = 20)
     private String cnpj;
 
-    @Column(name = "telefone", length = 20)
+    @Column(name = "telefone", length = 255)
     private String telefone;
+
+    @Column(name = "observacao", columnDefinition = "TEXT")
+    private String observacao;
 
     @Column(name = "municipio", length = 100)
     private String municipio;
