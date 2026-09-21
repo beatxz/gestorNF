@@ -11,6 +11,7 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
     const [nomeEmpresa, setNomeEmpresa] = useState("")
     const [cnpj, setCnpj] = useState("")
     const [telefone, setTelefone] = useState("")
+    const [observacao, setObservacao] = useState("")
     const [municipio, setMunicipio] = useState("")
     const [transportadora, setTransportadora] = useState("")
     const [modoEdicao, setModoEdicao] = useState(false)
@@ -26,6 +27,7 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
             setNomeEmpresa(cliente?.nomeEmpresa ?? "")
             setCnpj(cliente?.cnpj ?? "")
             setTelefone(cliente?.telefone ?? "")
+            setObservacao(cliente?.observacao ?? "")
             setMunicipio(cliente?.municipio ?? "")
             setTransportadora(cliente?.transportadora ?? "")
             setModoEdicao(!cliente)
@@ -53,6 +55,7 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
         setNomeEmpresa(cliente.nomeEmpresa ?? "")
         setCnpj(cliente.cnpj ?? "")
         setTelefone(cliente.telefone ?? "")
+        setObservacao(cliente.observacao ?? "")
         setMunicipio(cliente.municipio ?? "")
         setTransportadora(cliente.transportadora ?? "")
         setErros({})
@@ -72,6 +75,7 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
                 nomeEmpresa: nomeEmpresa.trim(),
                 cnpj: cnpj.trim() || null,
                 telefone: telefone.trim() || null,
+                observacao: observacao.trim() || null,
                 municipio: municipio.trim() || null,
                 transportadora: transportadora.trim() || null
             }
@@ -145,7 +149,7 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
 
                     <div className="flex justify-between gap-6 py-3">
                         <span className="text-sm text-muted-foreground">
-                            CNPJ
+                            CPF / CNPJ
                         </span>
                         <span className="text-right text-sm font-medium text-foreground">
                             {valorDetalhe(cliente.cnpj)}
@@ -154,7 +158,7 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
 
                     <div className="flex justify-between gap-6 py-3">
                         <span className="text-sm text-muted-foreground">
-                            Telefone / Celular
+                            Telefones / Celulares
                         </span>
                         <span className="text-right text-sm font-medium text-foreground">
                             {valorDetalhe(cliente.telefone)}
@@ -177,6 +181,16 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
                         <span className="text-right text-sm font-medium text-foreground">
                             {valorDetalhe(cliente.transportadora)}
                         </span>
+                    </div>
+
+                    <div className="flex justify-between gap-6 py-3">
+    <span className="text-sm text-muted-foreground">
+        Observação
+    </span>
+
+                        <span className="max-w-[65%] whitespace-pre-wrap text-right text-sm font-medium text-foreground">
+        {valorDetalhe(cliente.observacao)}
+    </span>
                     </div>
 
                     <div className="flex justify-between gap-6 py-3">
@@ -259,16 +273,16 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
 
                 <Input
                     id="c-cnpj"
-                    label="CNPJ"
-                    placeholder="Ex: 18.093.226/0001-40"
+                    label="CPF / CNPJ"
+                    placeholder="Ex: 123.456.789-00 ou 18.093.226/0001-40"
                     value={cnpj}
                     onChange={(e) => setCnpj(e.target.value)}
                 />
 
                 <Input
                     id="c-telefone"
-                    label="Telefone / Celular"
-                    placeholder="Ex: (31) 99909-3872"
+                    label="Telefones / Celulares"
+                    placeholder="Ex: (31) 99909-3872 / (31) 98888-7777"
                     value={telefone}
                     onChange={(e) => setTelefone(e.target.value)}
                 />
@@ -288,6 +302,28 @@ export default function ClienteModal({ open, onClose, onSucesso, vendedorId, cli
                     value={transportadora}
                     onChange={(e) => setTransportadora(e.target.value)}
                 />
+                <div className="flex flex-col gap-1.5">
+                    <label
+                        htmlFor="c-observacao"
+                        className="text-sm font-medium text-foreground"
+                    >
+                        Observação
+                    </label>
+
+                    <textarea
+                        id="c-observacao"
+                        rows={4}
+                        maxLength={2000}
+                        placeholder="Ex: Cliente prefere contato pelo WhatsApp, recebe mercadoria somente pela manhã..."
+                        value={observacao}
+                        onChange={(e) => setObservacao(e.target.value)}
+                        className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+
+                    <span className="text-xs text-muted-foreground">
+        {observacao.length}/2000 caracteres
+    </span>
+                </div>
             </form>
         </Modal>
     )

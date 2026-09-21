@@ -15,6 +15,7 @@ public class ClienteConverter {
         clienteEntity.setNomeEmpresa(clienteDTORequest.getNomeEmpresa());
         clienteEntity.setCnpj(clienteDTORequest.getCnpj());
         clienteEntity.setTelefone(clienteDTORequest.getTelefone());
+        clienteEntity.setObservacao(clienteDTORequest.getObservacao());
         clienteEntity.setMunicipio(clienteDTORequest.getMunicipio());
         clienteEntity.setTransportadora(clienteDTORequest.getTransportadora());
         clienteEntity.setVendedor(vendedorEntity);
@@ -28,6 +29,7 @@ public class ClienteConverter {
                 .nomeEmpresa(clienteEntity.getNomeEmpresa())
                 .cnpj(clienteEntity.getCnpj())
                 .telefone(clienteEntity.getTelefone())
+                .observacao(clienteEntity.getObservacao())
                 .municipio(clienteEntity.getMunicipio())
                 .transportadora(clienteEntity.getTransportadora())
                 .idVendedor(clienteEntity.getVendedor() != null ? clienteEntity.getVendedor().getIdVendedor() : null)
