@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 public class NotaFiscalImportacaoService {
 
     private static final long TAMANHO_MAXIMO_PDF = 10 * 1024 * 1024;
+    private static final String REGEX_DOCUMENTO =
+            "(?:\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}|\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2})";
 
     public String extrairTexto(MultipartFile arquivo) {
 
@@ -70,7 +72,7 @@ public class NotaFiscalImportacaoService {
                 .nomeEmpresa(nomeEmpresa)
                 .valorNotaFiscal(valorTotal)
                 .dataEmissao(dataEmissao)
-                .cnpj(extrairCnpjCliente(texto))
+                .cnpj(extrairDocumentoCliente(texto))
                 .municipio(extrairMunicipio(texto))
                 .transportadora(extrairTransportadora(texto))
                 .build();
@@ -128,7 +130,10 @@ public class NotaFiscalImportacaoService {
 
     private String extrairCodigoCliente(String texto) {
         Matcher matcher = Pattern.compile(
-                "(?m)^(\\d+)\\s+-\\s+.+?\\s+\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\s+\\d{2}/\\d{2}/\\d{4}\\s*$").matcher(texto);
+                "(?m)^(\\d+)\\s+-\\s+.+?\\s+" +
+                        REGEX_DOCUMENTO +
+                        "\\s+\\d{2}/\\d{2}/\\d{4}\\s*$"
+        ).matcher(texto);
 
         if (matcher.find()) {
             return matcher.group(1);
@@ -138,8 +143,11 @@ public class NotaFiscalImportacaoService {
     }
 
     private String extrairNomeEmpresa(String texto) {
-        Matcher matcher = Pattern.compile("(?m)^\\d+\\s+-\\s+(.+?)\\s+\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\s+\\d{2}/\\d{2}/\\d{4}\\s*$")
-                .matcher(texto);
+        Matcher matcher = Pattern.compile(
+                "(?m)^\\d+\\s+-\\s+(.+?)\\s+" +
+                        REGEX_DOCUMENTO +
+                        "\\s+\\d{2}/\\d{2}/\\d{4}\\s*$"
+        ).matcher(texto);
 
         if (matcher.find()) {
             return matcher.group(1).trim();
@@ -148,9 +156,11 @@ public class NotaFiscalImportacaoService {
         return null;
     }
 
-    private String extrairCnpjCliente(String texto) {
+    private String extrairDocumentoCliente(String texto) {
         Matcher matcher = Pattern.compile(
-                "(?m)^\\d+\\s+-\\s+.+?\\s+(\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2})\\s+\\d{2}/\\d{2}/\\d{4}\\s*$"
+                "(?m)^\\d+\\s+-\\s+.+?\\s+(" +
+                        REGEX_DOCUMENTO +
+                        ")\\s+\\d{2}/\\d{2}/\\d{4}\\s*$"
         ).matcher(texto);
 
         if (matcher.find()) {
@@ -162,11 +172,16 @@ public class NotaFiscalImportacaoService {
 
     private LocalDate extrairDataEmissao(String texto) {
         Matcher matcher = Pattern.compile(
-                "(?m)^\\d+\\s+-\\s+.+?\\s+\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\s+(\\d{2}/\\d{2}/\\d{4})\\s*$"
+                "(?m)^\\d+\\s+-\\s+.+?\\s+" +
+                        REGEX_DOCUMENTO +
+                        "\\s+(\\d{2}/\\d{2}/\\d{4})\\s*$"
         ).matcher(texto);
 
         if (matcher.find()) {
-            return LocalDate.parse(matcher.group(1), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            return LocalDate.parse(
+                    matcher.group(1),
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            );
         }
 
         return null;

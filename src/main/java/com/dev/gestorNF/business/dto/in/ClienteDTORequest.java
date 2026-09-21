@@ -20,13 +20,16 @@ public class ClienteDTORequest {
     private String nomeEmpresa;
 
     @Pattern(
-            regexp = "^$|\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}",
-            message = "Informe um CNPJ válido no formato 00.000.000/0000-00"
+            regexp = "^$|\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}|\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}",
+            message = "Informe um CPF ou CNPJ válido"
     )
     private String cnpj;
 
-    @Size(max = 30, message = "O telefone deve ter no máximo 30 caracteres")
+    @Size(max = 255, message = "Os telefones devem ter no máximo 255 caracteres")
     private String telefone;
+
+    @Size(max = 2000, message = "A observação deve ter no máximo 2000 caracteres")
+    private String observacao;
 
     @Size(max = 100, message = "O município deve ter no máximo 100 caracteres")
     private String municipio;

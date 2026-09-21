@@ -879,7 +879,8 @@ export default function AddNotaModal({ open, onClose, onSucesso, vendedor }) {
 
                   <div className="flex flex-col gap-4">
                     <Input
-                        label="CNPJ"
+                        label="CPF / CNPJ"
+                        placeholder="Ex: 759.337.056-91 ou 18.093.226/0001-40"
                         value={notaEditando.cnpj}
                         onChange={(e) =>
                             setNotaEditando({

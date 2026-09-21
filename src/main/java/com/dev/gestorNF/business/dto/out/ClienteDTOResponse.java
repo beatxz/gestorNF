@@ -14,6 +14,7 @@ public class ClienteDTOResponse {
     private String nomeEmpresa;
     private String cnpj;
     private String telefone;
+    private String observacao;
     private String municipio;
     private String transportadora;
     private Long idVendedor;
