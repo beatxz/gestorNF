@@ -40,11 +40,20 @@ public class VendedorController {
     @ApiResponse(responseCode = "400" , description = "Vendedor não encontrado")
     @ApiResponse(responseCode = "403", description = "Falha na autenticação")
     @ApiResponse(responseCode = "500", description = "Erro de servidor")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarVendedor(@RequestHeader(name = "Authorization") String token,
-                                                 @PathVariable("id") Long idVendedor){
-        vendedorService.deletaVendedor(token,idVendedor);
-        return ResponseEntity.ok().build();
+    @PatchMapping("/{id}/desativar")
+    public ResponseEntity<Void> desativarVendedor(@RequestHeader("Authorization") String token,
+                                                  @PathVariable("id") Long idVendedor,
+                                                  @RequestParam(required = false) Long transferirParaId) {
+        vendedorService.desativarVendedor(token, idVendedor, transferirParaId);return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/inativos")
+    public ResponseEntity<List<VendedorDTOResponse>> buscarInativos(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(vendedorService.buscarVendedoresInativos(token));
+    }
+
+    @PatchMapping("/{id}/reativar")
+    public ResponseEntity<VendedorDTOResponse> reativarVendedor(@RequestHeader("Authorization") String token, @PathVariable("id") Long idVendedor) {
+        return ResponseEntity.ok(vendedorService.reativarVendedor(token, idVendedor));
     }
     @Operation(summary = "Buscar vendedor", description = "Buscar vendedor por Id")
     @ApiResponse(responseCode = "200" , description = "Vendedor encontrado com sucesso")

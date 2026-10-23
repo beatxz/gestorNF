@@ -24,6 +24,10 @@ public class VendedorEntity {
     @Column(name = "comissao", length = 4)
     private double comissao;
 
+    @Builder.Default
+    @Column(name = "ativo", nullable = false)
+    private boolean ativo = true;
+
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private UsuarioEntity usuario;

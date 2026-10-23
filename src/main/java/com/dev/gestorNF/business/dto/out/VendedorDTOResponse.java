@@ -12,4 +12,5 @@ public class VendedorDTOResponse {
     private Long id;
     private String nome;
     private double comissao;
+    private boolean ativo;
 }
