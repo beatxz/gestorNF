@@ -12,6 +12,10 @@ public interface VendedorRepository extends JpaRepository<VendedorEntity,Long> {
 
     List<VendedorEntity> findByUsuarioEmail(String email);
 
+    List<VendedorEntity> findByUsuarioEmailAndAtivoTrue(String email);
+
+    List<VendedorEntity> findByUsuarioEmailAndAtivoFalse(String email);
+
     Optional<VendedorEntity> findByIdVendedorAndUsuarioId(Long idVendedor, Long usuarioId);
 
     void deleteByUsuarioId(Long usuarioId);
