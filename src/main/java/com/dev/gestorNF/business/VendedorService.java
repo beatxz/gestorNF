@@ -46,44 +46,60 @@ public class VendedorService {
     }
 
     @Transactional
-    public void deletaVendedor(String token, Long idVendedor) {
-
+    public void desativarVendedor(
+            String token,
+            Long idVendedor,
+            Long transferirParaId
+    ) {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
 
-        UsuarioEntity usuarioEntity = usuarioRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Email não encontrado " + email));
+        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        VendedorEntity vendedorEntity =
-                vendedorRepository.findByIdVendedorAndUsuarioId(
-                        idVendedor,
-                        usuarioEntity.getId()
-                ).orElseThrow(() ->
-                        new RuntimeException("Vendedor não encontrado"));
+        VendedorEntity vendedor = vendedorRepository
+                .findByIdVendedorAndUsuarioId(idVendedor, usuario.getId())
+                .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
 
-        boolean possuiNotas =
-                !notaFiscalRepository
-                        .findByVendedorIdVendedorOrderByDataVendaDesc(idVendedor)
-                        .isEmpty();
+        if (!vendedor.isAtivo()) {
+            throw new IllegalArgumentException("Este vendedor já está desativado");
+        }
 
-        if (possuiNotas) {
-            throw new RuntimeException(
-                    "Não é possível excluir este vendedor porque existem notas fiscais vinculadas a ele."
-            );
+        VendedorEntity destino = null;
+
+        if (transferirParaId != null) {
+            if (idVendedor.equals(transferirParaId)) {
+                throw new IllegalArgumentException(
+                        "O vendedor de destino deve ser diferente do vendedor desativado"
+                );
+            }
+
+            destino = vendedorRepository
+                    .findByIdVendedorAndUsuarioId(transferirParaId, usuario.getId())
+                    .orElseThrow(() -> new RuntimeException("Vendedor de destino não encontrado"));
+
+            if (!destino.isAtivo()) {
+                throw new IllegalArgumentException(
+                        "Não é possível transferir clientes para um vendedor inativo"
+                );
+            }
         }
 
         List<ClienteEntity> clientes =
                 clienteRepository.findByVendedorIdVendedor(idVendedor);
 
-        clientes.forEach(cliente -> cliente.setVendedor(null));
+        for (ClienteEntity cliente : clientes) {
+            if (destino == null) {
+                cliente.setAtivo(false);
+            } else {
+                cliente.setVendedor(destino);
+                cliente.setAtivo(true);
+            }
+        }
 
         clienteRepository.saveAll(clientes);
 
-        metaVendedorRepository.deleteByVendedorIdVendedor(
-                idVendedor
-        );
-
-        vendedorRepository.delete(vendedorEntity);
+        vendedor.setAtivo(false);
+        vendedorRepository.save(vendedor);
     }
 
     public List<VendedorDTOResponse> buscarVendedoresDoUsuario(String token) {
@@ -92,10 +108,40 @@ public class VendedorService {
                 .orElseThrow(() ->
                         new RuntimeException("Email não encontrado " + email));
 
-        return vendedorRepository.findByUsuarioEmail(email)
+        return vendedorRepository.findByUsuarioEmailAndAtivoTrue(email)
                 .stream()
                 .map(vendedorConverter::paraVendedorDTOResponse)
                 .toList();
+    }
+
+    public List<VendedorDTOResponse> buscarVendedoresInativos(String token) {
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        return vendedorRepository.findByUsuarioEmailAndAtivoFalse(email)
+                .stream()
+                .map(vendedorConverter::paraVendedorDTOResponse)
+                .toList();
+    }
+
+    @Transactional
+    public VendedorDTOResponse reativarVendedor(String token, Long idVendedor) {
+        String email = jwtUtil.extrairEmailToken(token.substring(7));
+
+        UsuarioEntity usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        VendedorEntity vendedor = vendedorRepository
+                .findByIdVendedorAndUsuarioId(idVendedor, usuario.getId())
+                .orElseThrow(() -> new RuntimeException("Vendedor não encontrado"));
+
+        vendedor.setAtivo(true);
+
+        return vendedorConverter.paraVendedorDTOResponse(
+                vendedorRepository.save(vendedor)
+        );
     }
     public VendedorDTOResponse buscarVendedorPorId(String token,Long idVendedor){
         String email = jwtUtil.extrairEmailToken(token.substring(7));

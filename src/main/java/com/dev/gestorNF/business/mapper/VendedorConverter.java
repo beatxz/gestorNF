@@ -24,6 +24,7 @@ public class VendedorConverter {
                 .id(vendedorEntity.getIdVendedor())
                 .nome(vendedorEntity.getNome())
                 .comissao(vendedorEntity.getComissao())
+                .ativo(vendedorEntity.isAtivo())
                 .build();
     }
 
