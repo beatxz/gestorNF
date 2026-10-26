@@ -17,6 +17,7 @@ import TermosUsoPage from "./pages/TermosUsoPage.jsx"
 import ConvitePage from "./pages/ConvitePage.jsx"
 import AdminPage from "./pages/AdminPage.jsx"
 import AcessoBloqueadoPage from "./pages/AcessoBloqueadoPage.jsx"
+import AgendaPage from "./pages/AgendaPage.jsx"
 
 
 function CarregandoAuth() {
@@ -225,6 +226,15 @@ export default function App() {
                 element={
                     <RotaUsuario>
                         <ResultadoGeralPage />
+                    </RotaUsuario>
+                }
+            />
+
+            <Route
+                path="/agenda"
+                element={
+                    <RotaUsuario>
+                        <AgendaPage />
                     </RotaUsuario>
                 }
             />
