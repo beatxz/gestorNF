@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import {Settings, LogOut, BadgePercent, Download, Users, ChartNoAxesCombined,Menu,ShieldCheck} from "lucide-react"
+import {Settings, LogOut, BadgePercent, Download, Users, ChartNoAxesCombined,Menu,ShieldCheck,CalendarDays} from "lucide-react"
 import VendedorSidebar from "../components/VendedorSidebar.jsx"
 import FinanceCards from "../components/FinanceCards.jsx"
 import MonthPicker from "../components/MonthPicker.jsx"
@@ -611,6 +611,15 @@ export default function HomePage() {
                 title="Resultado geral"
             >
               <ChartNoAxesCombined size={18} />
+            </button>
+            <button
+                type="button"
+                onClick={() => navigate("/agenda")}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Agenda"
+                title="Agenda"
+            >
+              <CalendarDays size={18} />
             </button>
             <button
                 onClick={() => setModalConfig(true)}
